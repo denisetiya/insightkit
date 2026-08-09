@@ -1,0 +1,7 @@
+# InsightKit golden set — demo (orders/customers schema)
+- question: "total revenue dari orders yang status paid"
+  sql_expected: "SELECT SUM(amount) FROM orders WHERE status = 'paid'"
+- question: "berapa jumlah orders?"
+  sql_expected: "SELECT COUNT(*) FROM orders"
+- question: "berapa total revenue?"
+  sql_expected: "SELECT SUM(amount) FROM orders WHERE status = 'paid'"
