@@ -62,5 +62,6 @@ async def explain(
         ],
         model=model,
         client=client,
+        max_tokens=600,  # insights are short — cap speeds generation
     )
     return raw.strip()

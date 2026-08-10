@@ -22,7 +22,14 @@ DEFAULT_GOLDEN = "golden.yml"
 
 
 def load_config(path: str) -> Config:
-    return Config.from_yaml(path)
+    p = Path(path)
+    if p.exists():
+        return Config.from_yaml(path)
+    # env-only configuration (Docker pattern) — no YAML file required
+    try:
+        return Config()  # type: ignore[call-arg]  # database.url comes from env
+    except Exception as exc:
+        raise FileNotFoundError(f"Config not found: {p} (run 'insightkit init' first)") from exc
 
 
 def _run(coro):
@@ -95,13 +102,18 @@ def ask(
         result = await kit.ask(question, user=user, role=role)
         await kit.close()
         if json_output:
+            try:
+                chart = json.loads(result.chart) if result.chart else None
+            except json.JSONDecodeError:
+                chart = result.chart
             typer.echo(
                 json.dumps(
                     {
                         "question": result.question,
                         "sql": result.sql,
                         "insight": result.insight,
-                        "chart": result.chart,
+                        "chart": chart,
+                        "result": result.rows,
                         "status": result.status,
                         "error": result.error,
                         "latency_ms": result.latency_ms,

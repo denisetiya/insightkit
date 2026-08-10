@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from insightkit.config import Config
 from insightkit.db.schema import ColumnMeta, SchemaMetadata, TableMeta
-from insightkit.llm.prompt import build_prompt, estimate_tokens
+from insightkit.llm.prompt import build_prompt, estimate_tokens, relevant_tables
 
 
 def _schema() -> SchemaMetadata:
@@ -83,3 +83,34 @@ def test_language_hint() -> None:
     assert "Bahasa Indonesia" in id_prompt
     en_prompt = build_prompt("q", _schema(), language="en")
     assert "Answer in English" in en_prompt
+
+
+def test_relevant_tables_filters_and_fk_closure() -> None:
+    tables: list[TableMeta] = [
+        TableMeta(
+            name="orders",
+            columns=[
+                ColumnMeta(name="id", data_type="INTEGER", is_pk=True),
+                ColumnMeta(name="customer_id", data_type="INTEGER", fk_ref="customers.id"),
+                ColumnMeta(name="amount", data_type="REAL"),
+            ],
+        ),
+        TableMeta(
+            name="customers", columns=[ColumnMeta(name="id", data_type="INTEGER", is_pk=True)]
+        ),
+    ]
+    tables += [
+        TableMeta(name=f"unrelated_{i}", columns=[ColumnMeta(name="x", data_type="TEXT")])
+        for i in range(15)
+    ]
+    big = SchemaMetadata(db_key="d", dialect="sqlite", tables=tables)
+    filtered = relevant_tables(big, "berapa total revenue dari orders?", max_tables=5)
+    names = {t.name for t in filtered.tables}
+    assert "orders" in names
+    assert "customers" in names  # FK closure
+    assert all(not n.startswith("unrelated_") for n in names)
+
+
+def test_relevant_tables_passthrough_small_schema() -> None:
+    small = _schema()  # 2 tables
+    assert relevant_tables(small, "orders", max_tables=8) is small

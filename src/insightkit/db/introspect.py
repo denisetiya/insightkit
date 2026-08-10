@@ -123,6 +123,61 @@ async def _row_counts_sqlite(conn: AsyncConnection, tables: list[str]) -> dict[s
     return out
 
 
+async def _table_names_mysql(conn: AsyncConnection) -> list[str]:
+    rows = await conn.execute(
+        text(
+            "SELECT table_name FROM information_schema.tables "
+            "WHERE table_schema = DATABASE() AND table_type = 'BASE TABLE' ORDER BY table_name"
+        )
+    )
+    return [r[0] for r in rows]
+
+
+async def _columns_mysql(conn: AsyncConnection) -> dict[str, list[ColumnMeta]]:
+    rows = await conn.execute(
+        text(
+            "SELECT table_name, column_name, data_type, is_nullable, column_key "
+            "FROM information_schema.columns "
+            "WHERE table_schema = DATABASE() ORDER BY table_name, ordinal_position"
+        )
+    )
+    out: dict[str, list[ColumnMeta]] = {}
+    for table_name, column_name, data_type, is_nullable, column_key in rows:
+        out.setdefault(table_name, []).append(
+            ColumnMeta(
+                name=column_name,
+                data_type=data_type,
+                nullable=is_nullable == "YES",
+                is_pk=column_key == "PRI",
+            )
+        )
+    return out
+
+
+async def _fks_mysql(conn: AsyncConnection) -> dict[str, dict[str, str]]:
+    rows = await conn.execute(
+        text(
+            "SELECT table_name, column_name, referenced_table_name, referenced_column_name "
+            "FROM information_schema.key_column_usage "
+            "WHERE table_schema = DATABASE() AND referenced_table_name IS NOT NULL"
+        )
+    )
+    out: dict[str, dict[str, str]] = {}
+    for table_name, column_name, ref_table, ref_column in rows:
+        out.setdefault(table_name, {})[column_name] = f"{ref_table}.{ref_column}"
+    return out
+
+
+async def _row_counts_mysql(conn: AsyncConnection) -> dict[str, int]:
+    rows = await conn.execute(
+        text(
+            "SELECT table_name, table_rows FROM information_schema.tables "
+            "WHERE table_schema = DATABASE()"
+        )
+    )
+    return {name: int(count) for name, count in rows}
+
+
 async def _samples(conn: AsyncConnection, tables: list[TableMeta]) -> None:
     """Sample distinct values for categorical columns (non-numeric, non-date)."""
 
@@ -157,6 +212,13 @@ async def introspect(conn: AsyncConnection, db_key: str, dialect: str) -> Schema
     if dialect == "postgresql":
         names, cols, fks, counts = await asyncio.gather(
             _table_names_pg(conn), _columns_pg(conn), _fks_pg(conn), _row_counts_pg(conn)
+        )
+    elif dialect == "mysql":
+        names, cols, fks, counts = await asyncio.gather(
+            _table_names_mysql(conn),
+            _columns_mysql(conn),
+            _fks_mysql(conn),
+            _row_counts_mysql(conn),
         )
     elif dialect == "sqlite":
         names = await _table_names_sqlite(conn)

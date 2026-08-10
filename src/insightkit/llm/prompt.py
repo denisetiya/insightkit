@@ -20,10 +20,83 @@ STRICT RULES:
 7. When the question asks for insight over data, prefer aggregations (SUM, COUNT, AVG,
    GROUP BY) over raw rows."""
 
+MONGO_SYSTEM_PROMPT = """You are InsightKit, an enterprise data analyst AI.
+You answer natural-language questions about a MongoDB database by writing aggregation pipelines.
+STRICT RULES:
+1. Respond with a SINGLE JSON object, no markdown fences, no extra text:
+   {"sql": "<JSON payload as a string>", "reasoning": "<short reasoning>",
+    "needs_data": <true|false>}
+2. The "sql" field contains a JSON string: {"collection": "<collection name>",
+   "pipeline": [<aggregation stages>]} — valid MongoDB aggregation stages only.
+3. Use ONLY collection and field names that exist in the provided schema. Never invent fields.
+4. Read-only: NEVER use $out, $merge or $delete stages.
+5. If the question cannot be answered with the available schema, set needs_data to false
+   and sql to "".
+6. Prefer aggregation ($match, $group, $sort, $limit, $project, $count, $unwind) over
+   raw document dumps.
+7. The aggregation pipeline must be valid JSON — it will be parsed programmatically."""
+
 _LANG_HINTS = {
     "en": "Answer in English.",
     "id": "Answer in Bahasa Indonesia.",
 }
+
+
+def system_prompt_for(dialect: str) -> str:
+    return MONGO_SYSTEM_PROMPT if dialect == "mongodb" else SYSTEM_PROMPT
+
+
+def _tokens(text: str) -> set[str]:
+    import re
+
+    return set(re.findall(r"[a-z0-9_]+", text.lower()))
+
+
+def relevant_tables(schema: SchemaMetadata, question: str, max_tables: int = 8) -> SchemaMetadata:
+    """Keep only tables relevant to the question (+ FK closure) — smaller prompt, faster + cheaper.
+
+    Small schemas (<= max_tables) pass through untouched.
+    """
+    if len(schema.tables) <= max_tables:
+        return schema
+
+    q = _tokens(question)
+
+    def score(t) -> int:
+        s = 0
+        if _tokens(t.name) & q:
+            s += 3
+        for c in t.columns:
+            if _tokens(c.name) & q:
+                s += 1
+        return s
+
+    scored = sorted(schema.tables, key=score, reverse=True)
+    picked = [t for t in scored if score(t) > 0][:max_tables]
+    if not picked:
+        picked = scored[:max_tables]
+
+    # FK closure: include referenced tables so joins stay valid
+    names = {t.name for t in picked}
+    changed = True
+    while changed:
+        changed = False
+        for t in list(picked):
+            for c in t.columns:
+                if c.fk_ref:
+                    ref = c.fk_ref.split(".")[0]
+                    if ref not in names:
+                        ref_table = schema.table(ref)
+                        if ref_table is not None:
+                            picked.append(ref_table)
+                            names.add(ref)
+                            changed = True
+    return SchemaMetadata(
+        db_key=schema.db_key,
+        dialect=schema.dialect,
+        tables=picked,
+        extracted_at=schema.extracted_at,
+    )
 
 
 def estimate_tokens(text: str) -> int:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
@@ -14,17 +15,16 @@ from insightkit.audit import AuditLog
 from insightkit.cache import QueryCache, is_cacheable, query_hash
 from insightkit.chart import build_chart
 from insightkit.config import Config
+from insightkit.db.backends import SQLBackend, get_backend
 from insightkit.db.cache import load_schema, save_schema
-from insightkit.db.connector import build_engine, ping
-from insightkit.db.executor import DBError, TableNotFoundError, execute_query
-from insightkit.db.introspect import introspect
+from insightkit.db.executor import DBError, TableNotFoundError
 from insightkit.fewshot import FewShotStore
 from insightkit.llm.client import complete
 from insightkit.llm.explain import explain
-from insightkit.llm.prompt import SYSTEM_PROMPT, build_prompt
+from insightkit.llm.prompt import build_prompt, relevant_tables, system_prompt_for
 from insightkit.llm.router import pick_model
 from insightkit.llm.sqlgen import SqlGenError, parse_sql_plan
-from insightkit.security.guard import GuardError, mask_pii, validate
+from insightkit.security.guard import GuardError, mask_pii, validate, validate_mongo
 from insightkit.semantic import SemanticLayer
 
 MAX_ATTEMPTS = 3
@@ -47,6 +47,37 @@ class AskResult:
     error: str | None = None
     cached: bool = False
     attempts: int = 1
+    rows: list[dict] | None = None  # raw result rows (PII-masked, capped)
+
+
+def _json_safe(v):
+    """Make values JSON-serializable (Decimal/date/bytes from DB drivers)."""
+    from datetime import date, datetime
+    from decimal import Decimal
+
+    if isinstance(v, Decimal):
+        return float(v)
+    if isinstance(v, (datetime, date)):
+        return v.isoformat()
+    if isinstance(v, bytes):
+        return v.decode(errors="replace")
+    if isinstance(v, dict):
+        return {k: _json_safe(x) for k, x in v.items()}
+    if isinstance(v, (list, tuple)):
+        return [_json_safe(x) for x in v]
+    return v
+
+
+def _rows_for_output(df, limit: int = 50) -> list[dict]:
+    """Result rows as JSON-ready dicts — PII-masked, capped, JSON-safe."""
+    from insightkit.security.guard import mask_pii
+
+    out = []
+    for row in df.head(limit).to_dicts():
+        out.append(
+            {k: _json_safe(mask_pii(str(v)) if isinstance(v, str) else v) for k, v in row.items()}
+        )
+    return out
 
 
 class InsightKit:
@@ -59,7 +90,8 @@ class InsightKit:
         client: AsyncOpenAI | None = None,
     ) -> None:
         self.cfg = cfg
-        self.engine = build_engine(cfg)
+        self.backend = get_backend(cfg)
+        self.engine = self.backend.engine if isinstance(self.backend, SQLBackend) else None
         self.audit = AuditLog(cfg)
         self.cache = QueryCache(cfg)
         self.fewshots = FewShotStore(cfg)
@@ -73,15 +105,16 @@ class InsightKit:
         return hashlib.sha256(self.cfg.database.url.encode()).hexdigest()[:12]
 
     async def close(self) -> None:
-        await self.engine.dispose()
+        if self.engine is not None:
+            await self.engine.dispose()
 
     async def init(self, create_admin: str | None = None, admin_role: str = "admin") -> str | None:
         """Connect, introspect, cache schema. Returns admin API key if created."""
-        if not await ping(self.engine):
+        if not await self.backend.ping():
             raise RuntimeError("Cannot connect to database")
-        async with self.engine.connect() as conn:
-            meta = await introspect(conn, self.db_key, self.engine.url.get_backend_name())
-        await save_schema(self.cfg, meta)
+        meta = await self.backend.introspect(self.db_key)
+        if self.engine is not None:
+            await save_schema(self.cfg, meta)
         self._schema = meta
         self._schema_version = meta.extracted_at.isoformat()
 
@@ -92,15 +125,16 @@ class InsightKit:
         return None
 
     async def refresh_schema(self) -> None:
-        async with self.engine.connect() as conn:
-            meta = await introspect(conn, self.db_key, self.engine.url.get_backend_name())
-        await save_schema(self.cfg, meta)
+        meta = await self.backend.introspect(self.db_key)
+        if self.engine is not None:
+            await save_schema(self.cfg, meta)
         self._schema = meta
         self._schema_version = meta.extracted_at.isoformat()
 
     async def _get_schema(self):
         if self._schema is None:
-            self._schema = await load_schema(self.cfg, self.db_key)
+            if self.engine is not None:
+                self._schema = await load_schema(self.cfg, self.db_key)
             if self._schema is None:
                 await self.refresh_schema()
             else:
@@ -142,19 +176,21 @@ class InsightKit:
         sql: str | None = None
         df: pl.DataFrame | None = None
         tokens = 0
+        decline_count = 0
 
         for attempt in range(MAX_ATTEMPTS):
             result.attempts = attempt + 1
+            prompt_schema = relevant_tables(schema, question, self.cfg.prompt.relevant_tables)
             prompt = build_prompt(
                 question,
-                schema,
+                prompt_schema,
                 semantic_text=semantic_text,
                 few_shots=few_shots,
                 language=self.cfg.insight.language,
                 max_tokens=self.cfg.prompt.max_tokens,
             )
             messages = [
-                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "system", "content": system_prompt_for(self.backend.dialect)},
                 {"role": "user", "content": prompt},
             ]
             if previous_raw and last_error:
@@ -174,6 +210,7 @@ class InsightKit:
                 json_mode=True,
                 model=model,
                 client=self.client,
+                max_tokens=1500,  # SQL plans are short — cap speeds generation
             )
             tokens += len(prompt) // 4 + len(raw) // 4
             previous_raw = raw
@@ -188,18 +225,28 @@ class InsightKit:
 
             result.reasoning = plan.reasoning
             if not plan.needs_data or not plan.sql.strip():
-                result.status = "no_data"
-                result.insight = (
-                    "This question cannot be answered with the available data schema."
-                    if self.cfg.insight.language == "en"
-                    else "Pertanyaan ini tidak dapat dijawab dengan skema data yang tersedia."
-                )
-                break
+                # model declined — could be a flaky refusal; nudge once, then accept
+                decline_count += 1
+                last_error = "Model declined (needs_data=false)"
+                if stream:
+                    await stream("retry", {"attempt": attempt + 1, "error": last_error})
+                if decline_count >= 2:
+                    result.status = "no_data"
+                    result.insight = (
+                        "This question cannot be answered with the available data schema."
+                        if self.cfg.insight.language == "en"
+                        else "Pertanyaan ini tidak dapat dijawab dengan skema data yang tersedia."
+                    )
+                    break
+                continue
 
             try:
-                sql = validate(
-                    plan.sql, self.cfg.security.row_limit, self.cfg.security.forbidden_tables
-                )
+                if self.backend.dialect == "mongodb":
+                    sql = validate_mongo(plan.sql, self.cfg.security.row_limit)
+                else:
+                    sql = validate(
+                        plan.sql, self.cfg.security.row_limit, self.cfg.security.forbidden_tables
+                    )
             except GuardError as exc:
                 last_error = str(exc)
                 if stream:
@@ -211,7 +258,7 @@ class InsightKit:
                 await stream("sql", {"sql": sql})
 
             try:
-                df = await execute_query(self.engine, sql, self.cfg.security.query_timeout_s)
+                df = await self.backend.execute(sql, self.cfg.security.query_timeout_s)
                 break
             except TableNotFoundError as exc:
                 # schema drift — refresh once, then retry
@@ -230,6 +277,16 @@ class InsightKit:
 
         if result.status == "ok" and df is not None:
             result.row_count = df.height
+            result.rows = _rows_for_output(df)
+            if stream:
+                await stream(
+                    "result",
+                    {
+                        "columns": list(df.columns),
+                        "rows": result.rows,
+                        "row_count": result.row_count,
+                    },
+                )
             result.insight = await explain(
                 self.cfg, question, df, model=model, client=self.client
             )
@@ -238,7 +295,10 @@ class InsightKit:
             if stream:
                 await stream("insight", {"insight": result.insight})
                 if result.chart:
-                    await stream("chart", {"chart": result.chart})
+                    try:
+                        await stream("chart", {"chart": json.loads(result.chart)})
+                    except json.JSONDecodeError:
+                        await stream("chart", {"chart": result.chart})
         elif result.status == "no_data":
             result.chart = None
 
@@ -271,6 +331,7 @@ class InsightKit:
                     "insight": result.insight,
                     "chart": result.chart,
                     "row_count": result.row_count,
+                    "rows": result.rows,
                     "tokens": result.tokens,
                     "model": result.model,
                     "status": result.status,
@@ -278,5 +339,15 @@ class InsightKit:
                 },
             )
         if stream:
-            await stream("done", {"status": result.status, "latency_ms": result.latency_ms})
+            await stream(
+                "done",
+                {
+                    "status": result.status,
+                    "latency_ms": result.latency_ms,
+                    "tokens": result.tokens,
+                    "cached": result.cached,
+                    "row_count": result.row_count,
+                    "error": result.error,
+                },
+            )
         return result

@@ -1,10 +1,12 @@
 """Guardrails — read-only enforcement, row limits, PII masking, table blacklist.
 
 Layer 2 of the security model (layer 1 is the read-only DB role in db/connector.py).
+Also validates MongoDB aggregation pipelines (write stages blocked).
 """
 
 from __future__ import annotations
 
+import json
 import re
 
 FORBIDDEN_KEYWORDS = {
@@ -94,3 +96,27 @@ def validate(sql: str, limit: int, forbidden_tables: list[str]) -> str:
     stmt = check_read_only(sql)
     stmt = check_forbidden_tables(stmt, forbidden_tables)
     return enforce_row_limit(stmt, limit)
+
+
+MONGO_WRITE_STAGES = {"$out", "$merge", "$delete"}
+
+
+def validate_mongo(payload: str, limit: int) -> str:
+    """Validate an aggregation pipeline payload; enforces row limit via $limit."""
+    try:
+        data = json.loads(payload)
+    except json.JSONDecodeError as exc:
+        raise GuardError(f"Invalid MongoDB query JSON: {exc}") from exc
+    collection = data.get("collection")
+    pipeline = data.get("pipeline")
+    if not collection or not isinstance(pipeline, list):
+        raise GuardError('MongoDB query must be {"collection": "...", "pipeline": [...]}')
+    for stage in pipeline:
+        if not isinstance(stage, dict):
+            raise GuardError(f"Invalid aggregation stage: {stage!r}")
+        for key in stage:
+            if key in MONGO_WRITE_STAGES:
+                raise GuardError(f"Forbidden aggregation stage: {key}")
+    if limit > 0 and not any("$limit" in s for s in pipeline):
+        pipeline.append({"$limit": limit})
+    return json.dumps(data)

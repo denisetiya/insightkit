@@ -62,6 +62,7 @@ class PromptConfig(BaseModel):
     max_tokens: int = 3_000
     max_few_shots: int = 3
     max_tables: int = 200
+    relevant_tables: int = 8  # filter schema ke N tabel relevan untuk prompt
 
 
 class CacheConfig(BaseModel):

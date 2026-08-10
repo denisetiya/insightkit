@@ -6,10 +6,8 @@ import hashlib
 import secrets
 from pathlib import Path
 
-import aiosqlite
-
 from insightkit.config import Config
-from insightkit.db.cache import meta_db_path
+from insightkit.db.cache import MetaDB, meta_db_path
 
 ROLES = {"admin", "analyst", "viewer"}
 
@@ -41,7 +39,7 @@ class UserStore:
         if role not in ROLES:
             raise ValueError(f"Invalid role '{role}' (must be one of {sorted(ROLES)})")
         key = generate_api_key()
-        async with aiosqlite.connect(self.path) as db:
+        async with MetaDB(self.path) as db:
             await db.execute(_DDL)
             await db.execute(
                 "INSERT INTO users (username, role, api_key_hash, created_at) "
@@ -53,26 +51,29 @@ class UserStore:
 
     async def verify(self, api_key: str) -> dict | None:
         """Return {username, role} if the API key is valid."""
-        async with aiosqlite.connect(self.path) as db:
-            await db.execute(_DDL)
-            cursor = await db.execute(
-                "SELECT username, role FROM users WHERE api_key_hash = ?",
-                (hash_api_key(api_key),),
-            )
-            row = await cursor.fetchone()
+        try:
+            async with MetaDB(self.path) as db:
+                await db.execute(_DDL)
+                cursor = await db.execute(
+                    "SELECT username, role FROM users WHERE api_key_hash = ?",
+                    (hash_api_key(api_key),),
+                )
+                row = await cursor.fetchone()
+        except Exception:  # noqa: BLE001 — missing/read-only meta db ⇒ invalid key
+            return None
         if not row:
             return None
         return {"username": row[0], "role": row[1]}
 
     async def delete(self, username: str) -> bool:
-        async with aiosqlite.connect(self.path) as db:
+        async with MetaDB(self.path) as db:
             await db.execute(_DDL)
             cursor = await db.execute("DELETE FROM users WHERE username = ?", (username,))
             await db.commit()
         return cursor.rowcount > 0
 
     async def list_users(self) -> list[dict]:
-        async with aiosqlite.connect(self.path) as db:
+        async with MetaDB(self.path) as db:
             await db.execute(_DDL)
             cursor = await db.execute(
                 "SELECT username, role, created_at FROM users ORDER BY id"

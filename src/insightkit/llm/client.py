@@ -37,12 +37,15 @@ async def complete(
     json_mode: bool = False,
     model: str | None = None,
     client: AsyncOpenAI | None = None,
+    max_tokens: int | None = None,
 ) -> str:
     """Single non-streaming completion with exponential backoff retry."""
     c = client or build_client(cfg)
     kwargs: dict = {"model": model or cfg.llm.model, "messages": messages}
     if json_mode:
         kwargs["response_format"] = {"type": "json_object"}
+    if max_tokens:
+        kwargs["max_tokens"] = max_tokens
 
     last_err: Exception | None = None
     for attempt in range(cfg.llm.max_retries + 1):

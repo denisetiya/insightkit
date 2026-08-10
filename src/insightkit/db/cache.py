@@ -17,6 +17,29 @@ def meta_db_path(cfg: Config) -> Path:
     return cfg.storage.path / cfg.storage.meta_db
 
 
+async def meta_connect(path: Path) -> aiosqlite.Connection:
+    """Open the meta DB with WAL + busy timeout — concurrent writers don't block."""
+    conn = await aiosqlite.connect(path)
+    await conn.execute("PRAGMA journal_mode=WAL")
+    await conn.execute("PRAGMA busy_timeout=5000")
+    await conn.execute("PRAGMA synchronous=NORMAL")
+    return conn
+
+
+class MetaDB:
+    """Async context manager over the meta DB (WAL + busy timeout)."""
+
+    def __init__(self, path: Path) -> None:
+        self.path = path
+
+    async def __aenter__(self) -> aiosqlite.Connection:
+        self._conn = await meta_connect(self.path)
+        return self._conn
+
+    async def __aexit__(self, *exc) -> None:
+        await self._conn.close()
+
+
 _SCHEMA_DDL = """
 CREATE TABLE IF NOT EXISTS schema_meta (
   db_key TEXT NOT NULL,
@@ -35,7 +58,7 @@ CREATE TABLE IF NOT EXISTS schema_meta (
 
 async def init_meta_db(cfg: Config) -> None:
     path = meta_db_path(cfg)
-    async with aiosqlite.connect(path) as db:
+    async with MetaDB(path) as db:
         await db.execute(_SCHEMA_DDL)
         await db.execute(
             "CREATE TABLE IF NOT EXISTS meta_info (key TEXT PRIMARY KEY, value TEXT)"
@@ -46,7 +69,7 @@ async def init_meta_db(cfg: Config) -> None:
 async def save_schema(cfg: Config, meta: SchemaMetadata) -> None:
     await init_meta_db(cfg)
     path = meta_db_path(cfg)
-    async with aiosqlite.connect(path) as db:
+    async with MetaDB(path) as db:
         await db.execute("DELETE FROM schema_meta WHERE db_key = ?", (meta.db_key,))
         for t in meta.tables:
             for c in t.columns:
@@ -75,10 +98,11 @@ async def save_schema(cfg: Config, meta: SchemaMetadata) -> None:
 
 
 async def load_schema(cfg: Config, db_key: str) -> SchemaMetadata | None:
+    await init_meta_db(cfg)
     path = meta_db_path(cfg)
     if not path.exists():
         return None
-    async with aiosqlite.connect(path) as db:
+    async with MetaDB(path) as db:
         await db.execute(_SCHEMA_DDL)
         cursor = await db.execute(
             "SELECT table_name, column_name, data_type, nullable, is_pk, fk_ref, "

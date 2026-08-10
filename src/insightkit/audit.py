@@ -5,10 +5,8 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from pathlib import Path
 
-import aiosqlite
-
 from insightkit.config import Config
-from insightkit.db.cache import meta_db_path
+from insightkit.db.cache import MetaDB, meta_db_path
 
 _DDL = """
 CREATE TABLE IF NOT EXISTS audit_log (
@@ -48,7 +46,7 @@ class AuditLog:
         status: str = "ok",
         error: str | None = None,
     ) -> None:
-        async with aiosqlite.connect(self.path) as db:
+        async with MetaDB(self.path) as db:
             await db.execute(_DDL)
             await db.execute(
                 "INSERT INTO audit_log "
@@ -74,7 +72,7 @@ class AuditLog:
     async def query(
         self, user: str | None = None, since: str | None = None, limit: int = 100
     ) -> list[dict]:
-        async with aiosqlite.connect(self.path) as db:
+        async with MetaDB(self.path) as db:
             await db.execute(_DDL)
             sql = (
                 "SELECT ts, user, role, question, sql, result_summary, latency_ms, "

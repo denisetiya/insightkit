@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InsightKit — Tanya Datamu</title>
+<script src="https://cdn.plotly.com/plotly-2.35.2.min.js"></script>
+<style>
+  :root {
+    --blue: #2563eb; --cyan: #06b6d4; --ink: #0f172a; --muted: #64748b;
+    --bg: #f8fafc; --card: #ffffff; --line: #e2e8f0; --soft: #f1f5f9;
+    --ok: #059669; --warn: #d97706; --err: #dc2626;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, Inter, sans-serif; background: var(--bg); color: var(--ink); height: 100vh; display: flex; flex-direction: column; }
+  header { display: flex; align-items: center; gap: 12px; padding: 12px 20px; background: var(--card); border-bottom: 1px solid var(--line); }
+  .logo { width: 32px; height: 32px; border-radius: 9px; background: linear-gradient(135deg, var(--blue), var(--cyan)); display: grid; place-items: center; flex-shrink: 0; }
+  .logo svg { width: 18px; height: 18px; }
+  header h1 { font-size: 16px; font-weight: 700; }
+  header .sub { font-size: 12px; color: var(--muted); }
+  .spacer { flex: 1; }
+  .btn { border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 8px; padding: 7px 14px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+  .btn:hover { border-color: var(--cyan); color: var(--blue); }
+  .btn.primary { background: linear-gradient(135deg, var(--blue), var(--cyan)); color: #fff; border: none; }
+  .btn.primary:disabled { opacity: .5; cursor: not-allowed; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; padding: 10px 20px 0; }
+  .chip { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 5px 12px; font-size: 12px; color: var(--muted); cursor: pointer; }
+  .chip:hover { border-color: var(--cyan); color: var(--blue); }
+  #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+  .msg { max-width: 860px; width: 100%; margin: 0 auto; }
+  .user-msg { align-self: flex-end; max-width: 640px; background: linear-gradient(135deg, var(--blue), var(--cyan)); color: #fff; border-radius: 14px 14px 4px 14px; padding: 10px 14px; font-size: 14px; line-height: 1.5; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; box-shadow: 0 1px 3px rgba(15,23,42,.05); }
+  .meta { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+  .meta b { color: var(--ink); font-weight: 600; }
+  .badge { padding: 2px 8px; border-radius: 999px; font-weight: 700; font-size: 11px; }
+  .badge.ok { background: #ecfdf5; color: var(--ok); } .badge.no_data { background: #fffbeb; color: var(--warn); } .badge.error { background: #fef2f2; color: var(--err); } .badge.cached { background: #eff6ff; color: var(--blue); }
+  .insight { font-size: 15px; line-height: 1.65; white-space: pre-wrap; }
+  .thinking { color: var(--muted); font-size: 13px; font-style: italic; }
+  .chart-box { margin-top: 12px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 12.5px; }
+  th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; }
+  th { background: var(--soft); font-weight: 600; position: sticky; top: 0; }
+  .table-wrap { max-height: 280px; overflow: auto; border: 1px solid var(--line); border-radius: 10px; }
+  details { margin-top: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--soft); }
+  summary { cursor: pointer; padding: 8px 12px; font-size: 12.5px; font-weight: 600; color: var(--blue); }
+  code.sql { display: block; padding: 10px 12px; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; overflow-x: auto; white-space: pre-wrap; }
+  .err { color: var(--err); font-size: 13px; margin-top: 8px; }
+  .section-label { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 14px 0 4px; }
+  #inputbar { display: flex; gap: 10px; padding: 14px 20px 18px; background: var(--card); border-top: 1px solid var(--line); max-width: 900px; margin: 0 auto; width: 100%; }
+  #q { flex: 1; resize: none; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; font: inherit; font-size: 14px; outline: none; max-height: 140px; }
+  #q:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(6,182,212,.15); }
+  /* modal */
+  .overlay { position: fixed; inset: 0; background: rgba(15,23,42,.4); display: none; place-items: center; z-index: 50; }
+  .overlay.open { display: grid; }
+  .modal { background: var(--card); border-radius: 16px; padding: 24px; width: min(440px, 92vw); }
+  .modal h2 { font-size: 16px; margin-bottom: 4px; }
+  .modal .hint { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 5px; }
+  .field input { width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; font: inherit; font-size: 13px; outline: none; }
+  .field input:focus { border-color: var(--cyan); }
+  .modal .actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+  .status-test { font-size: 12px; margin-top: 8px; }
+  .status-test.ok { color: var(--ok); } .status-test.err { color: var(--err); }
+  ::-webkit-scrollbar { width: 8px; height: 8px; } ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 3v18h18"/><path d="M7 14l3-4 3 3 4-6"/>
+    </svg>
+  </div>
+  <div>
+    <h1>InsightKit</h1>
+    <div class="sub">Tanya datamu pakai bahasa natural</div>
+  </div>
+  <div class="spacer"></div>
+  <button class="btn" id="settingsBtn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    Pengaturan
+  </button>
+</header>
+
+<div class="chips" id="chips">
+  <button class="chip">berapa total revenue dari orders yang status paid?</button>
+  <button class="chip">berapa jumlah orders?</button>
+  <button class="chip">revenue per bulan di 2025?</button>
+  <button class="chip">kota mana customer paling banyak?</button>
+</div>
+
+<div id="chat"></div>
+
+<div id="inputbar">
+  <textarea id="q" rows="1" placeholder="Tanya datamu… (Enter kirim, Shift+Enter baris baru)"></textarea>
+  <button class="btn primary" id="send">Kirim</button>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2>Pengaturan Koneksi</h2>
+    <div class="hint">URL API & API key disimpan di browser (localStorage).</div>
+    <div class="field"><label>API URL</label><input id="apiUrl" placeholder="https://insightkit.denisetiya.site"></div>
+    <div class="field"><label>API Key</label><input id="apiKey" type="password" placeholder="ik_..."></div>
+    <div class="status-test" id="testStatus"></div>
+    <div class="actions">
+      <button class="btn" id="testBtn">Tes Koneksi</button>
+      <button class="btn primary" id="saveBtn">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const cfg = { url: localStorage.getItem("ik_url") || "https://insightkit.denisetiya.site", key: localStorage.getItem("ik_key") || "" };
+let busy = false;
+
+function setCfg(){ cfg.url = $("apiUrl").value.trim().replace(/\/+$/, ""); cfg.key = $("apiKey").value.trim(); localStorage.setItem("ik_url", cfg.url); localStorage.setItem("ik_key", cfg.key); }
+function esc(s){ const d = document.createElement("div"); d.textContent = s == null ? "" : String(s); return d.innerHTML; }
+function now(){ return new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" }); }
+
+function addCard(q){
+  const wrap = document.createElement("div"); wrap.className = "msg";
+  const user = document.createElement("div"); user.className = "user-msg"; user.textContent = q;
+  const card = document.createElement("div"); card.className = "card";
+  card.innerHTML = `<div class="meta"><span>${now()}</span><span class="badge" id="b-status">…</span></div><div class="thinking" id="b-thinking">Menghubungi InsightKit…</div><div class="insight" id="b-insight" style="display:none"></div><div class="section-label" id="b-result-label" style="display:none">Hasil Query</div><div class="table-wrap" id="b-table" style="display:none"></div><div class="chart-box" id="b-chart"></div><details id="b-sql-wrap" style="display:none"><summary>Lihat SQL</summary><code class="sql" id="b-sql"></code></details><div class="err" id="b-err"></div><div class="meta" id="b-meta" style="margin-top:10px;margin-bottom:0"></div>`;
+  wrap.appendChild(user); wrap.appendChild(card); $("chat").appendChild(wrap);
+  wrap.scrollIntoView({ behavior: "smooth", block: "start" });
+  return { wrap, thinking: $("b-thinking"), insight: $("b-insight"), table: $("b-table"), tableLabel: $("b-result-label"), chart: $("b-chart"), sql: $("b-sql"), sqlWrap: $("b-sql-wrap"), err: $("b-err"), meta: $("b-meta"), status: $("b-status") };
+}
+
+async function ask(q){
+  if (busy) return; busy = true; $("send").disabled = true;
+  const el = addCard(q);
+  try {
+    const res = await fetch(cfg.url + "/api/v1/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-API-Key": cfg.key },
+      body: JSON.stringify({ question: q }),
+    });
+    if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.detail || `HTTP ${res.status}`); }
+    const reader = res.body.getReader(); const dec = new TextDecoder(); let buf = "";
+    for (;;) {
+      const { done, value } = await reader.read(); if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let idx;
+      while ((idx = buf.indexOf("\n\n")) !== -1) {
+        const block = buf.slice(0, idx); buf = buf.slice(idx + 2);
+        handle(block, el);
+      }
+    }
+  } catch (e) {
+    el.thinking.style.display = "none";
+    el.err.textContent = "Gagal: " + e.message + (cfg.key ? "" : " — isi API key dulu di Pengaturan.");
+    el.status.textContent = "error"; el.status.className = "badge error";
+  } finally { busy = false; $("send").disabled = false; }
+}
+
+function handle(block, el){
+  const ev = block.match(/^event: (\w+)/m)?.[1];
+  const dm = block.match(/^data: (.+)/ms);
+  if (!ev || !dm) return;
+  let d; try { d = JSON.parse(dm[1]); } catch { return; }
+  if (ev === "plan") { el.thinking.textContent = `Memproses dengan ${d.model} (${d.schema_tables} tabel)…`; }
+  else if (ev === "retry") { el.thinking.textContent = `Coba ulang: ${d.error}…`; }
+  else if (ev === "sql") { el.sql.textContent = d.sql; el.sqlWrap.style.display = "block"; el.thinking.style.display = "none"; }
+  else if (ev === "result") {
+    el.tableLabel.style.display = "block";
+    let h = "<table><thead><tr>" + d.columns.map(c => `<th>${esc(c)}</th>`).join("") + "</tr></thead><tbody>";
+    h += d.rows.map(r => "<tr>" + d.columns.map(c => `<td>${esc(r[c])}</td>`).join("") + "</tr>").join("");
+    h += `</tbody></table><div style="font-size:11px;color:#64748b;padding:6px">${d.row_count} baris</div>`;
+    el.table.innerHTML = h; el.table.style.display = "block";
+  }
+  else if (ev === "insight") { el.insight.textContent = d.insight; el.insight.style.display = "block"; }
+  else if (ev === "chart") { Plotly.newPlot(el.chart, d.chart.data, d.chart.layout, { responsive: true, displayModeBar: false }); }
+  else if (ev === "done") {
+    el.status.textContent = d.status + (d.cached ? " (cached)" : "");
+    el.status.className = "badge " + d.status + (d.cached ? " cached" : "");
+    if (d.error) el.err.textContent = d.error;
+    el.meta.innerHTML = `latency <b>${d.latency_ms}ms</b> · tokens <b>${d.tokens}</b> · rows <b>${d.row_count}</b>`;
+    el.thinking.style.display = "none";
+  }
+}
+
+$("send").onclick = () => { const q = $("q").value.trim(); if (!q) return; $("q").value = ""; $("q").style.height = "auto"; ask(q); };
+$("q").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("send").click(); } });
+$("q").addEventListener("input", () => { $("q").style.height = "auto"; $("q").style.height = Math.min($("q").scrollHeight, 140) + "px"; });
+$("chips").addEventListener("click", (e) => { if (e.target.classList.contains("chip")) ask(e.target.textContent); });
+
+$("settingsBtn").onclick = () => { $("apiUrl").value = cfg.url; $("apiKey").value = cfg.key; $("testStatus").textContent = ""; $("overlay").classList.add("open"); };
+$("overlay").onclick = (e) => { if (e.target === $("overlay")) $("overlay").classList.remove("open"); };
+$("saveBtn").onclick = () => { setCfg(); $("overlay").classList.remove("open"); };
+$("testBtn").onclick = async () => {
+  const base = $("apiUrl").value.trim().replace(/\/+$/, ""); const key = $("apiKey").value.trim();
+  const st = $("testStatus");
+  try {
+    const r = await fetch(base + "/api/v1/health", { headers: { "X-API-Key": key } });
+    if (r.ok) { const h = await r.json(); st.className = "status-test ok"; st.textContent = `✓ Terhubung — database: ${h.database ? "OK" : "DOWN"}, model: ${h.model}`; }
+    else { st.className = "status-test err"; st.textContent = `✗ HTTP ${r.status} — ${r.status === 401 ? "API key salah" : "URL salah?"}`; }
+  } catch { st.className = "status-test err"; st.textContent = "✗ Gagal terhubung — cek URL / koneksi."; }
+};
+</script>
+</body>
+</html>

@@ -8,10 +8,8 @@ import re
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-import aiosqlite
-
 from insightkit.config import Config
-from insightkit.db.cache import meta_db_path
+from insightkit.db.cache import MetaDB, meta_db_path
 
 _VOLATILE_RE = re.compile(
     r"\b(now|current_timestamp|current_date|current_time|random|uuid|newid|getdate|rand)\s*\(",
@@ -42,7 +40,7 @@ class QueryCache:
         self.ttl_s = cfg.cache.ttl_s
 
     async def get(self, key: str) -> dict | None:
-        async with aiosqlite.connect(self.path) as db:
+        async with MetaDB(self.path) as db:
             await db.execute(_DDL)
             cursor = await db.execute(
                 "SELECT result_json, expires_at FROM cache WHERE query_hash = ?", (key,)
@@ -58,7 +56,7 @@ class QueryCache:
     async def set(self, key: str, payload: dict) -> None:
         now = datetime.now(UTC)
         expires = now + timedelta(seconds=self.ttl_s)
-        async with aiosqlite.connect(self.path) as db:
+        async with MetaDB(self.path) as db:
             await db.execute(_DDL)
             await db.execute(
                 "INSERT OR REPLACE INTO cache (query_hash, result_json, created_at, expires_at) "

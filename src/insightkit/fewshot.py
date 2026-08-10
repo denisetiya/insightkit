@@ -6,10 +6,8 @@ import hashlib
 import re
 from pathlib import Path
 
-import aiosqlite
-
 from insightkit.config import Config
-from insightkit.db.cache import meta_db_path
+from insightkit.db.cache import MetaDB, meta_db_path
 
 _DDL = """
 CREATE TABLE IF NOT EXISTS few_shots (
@@ -35,7 +33,7 @@ class FewShotStore:
         self.path: Path = meta_db_path(cfg)
 
     async def add(self, question: str, sql: str, tags: str = "", source: str = "manual") -> None:
-        async with aiosqlite.connect(self.path) as db:
+        async with MetaDB(self.path) as db:
             await db.execute(_DDL)
             await db.execute(
                 "INSERT OR IGNORE INTO few_shots "
@@ -47,7 +45,7 @@ class FewShotStore:
 
     async def search(self, question: str, k: int = 3) -> list[tuple[str, str]]:
         """Keyword-overlap retrieval (cheap, deterministic — no embeddings needed)."""
-        async with aiosqlite.connect(self.path) as db:
+        async with MetaDB(self.path) as db:
             await db.execute(_DDL)
             cursor = await db.execute("SELECT question, sql FROM few_shots")
             rows = await cursor.fetchall()
@@ -63,13 +61,13 @@ class FewShotStore:
         return [(q, s) for _, q, s in scored[:k]]
 
     async def count(self) -> int:
-        async with aiosqlite.connect(self.path) as db:
+        async with MetaDB(self.path) as db:
             await db.execute(_DDL)
             cursor = await db.execute("SELECT COUNT(*) FROM few_shots")
             return int((await cursor.fetchone())[0])
 
     async def list_all(self, limit: int = 100) -> list[dict]:
-        async with aiosqlite.connect(self.path) as db:
+        async with MetaDB(self.path) as db:
             await db.execute(_DDL)
             cursor = await db.execute(
                 "SELECT question, sql, tags, source, created_at FROM few_shots "

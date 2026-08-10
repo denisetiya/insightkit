@@ -26,5 +26,7 @@ jobs:
       - name: Test
         run: |
           uv run pytest -m "not e2e" -v || test $? -eq 5
+      - name: Golden set sanity
+        run: uv run insightkit golden -g tests/golden/orders.yml
       - name: Build
         run: uv build
