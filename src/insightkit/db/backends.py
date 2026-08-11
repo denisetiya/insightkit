@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 from abc import ABC, abstractmethod
+from typing import Any
 from urllib.parse import urlparse
 
 import httpx
@@ -84,7 +85,7 @@ class MongoBackend(Backend):
         if parsed.scheme == "mongodb" and parsed.path:
             # strip db name from path so client connects to server
             uri = uri.replace(f"/{dbname}", "", 1)
-        self._client = motor.motor_asyncio.AsyncIOMotorClient(
+        self._client: Any = motor.motor_asyncio.AsyncIOMotorClient(
             uri, serverSelectionTimeoutMS=5000
         )
         self._db = self._client[dbname]
@@ -143,7 +144,7 @@ class MongoBackend(Backend):
         return pl.DataFrame(data)
 
 
-def _mongo_type(value) -> str:
+def _mongo_type(value: object) -> str:
     if isinstance(value, bool):
         return "BOOL"
     if isinstance(value, int):
@@ -159,7 +160,7 @@ def _mongo_type(value) -> str:
     return "STRING"
 
 
-def _flatten(value):
+def _flatten(value: object) -> object:
     if isinstance(value, (dict, list)):
         return json.dumps(value, default=str)
     return value

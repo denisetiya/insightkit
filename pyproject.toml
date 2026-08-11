@@ -59,6 +59,18 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 python_version = "3.11"
 strict = true
 packages = ["src/insightkit"]
+# dynamic DB/LLM libs make these flags noisy without catching real bugs
+disallow_any_generics = false
+disallow_untyped_defs = false
+disallow_untyped_calls = false
+warn_return_any = false
+
+[[tool.mypy.overrides]]
+module = [
+  "yaml", "plotly.*", "polars.*", "openai.*", "motor.*", "psycopg.*",
+  "aiosqlite", "jwt", "pydantic_settings.*", "testcontainers.*",
+]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

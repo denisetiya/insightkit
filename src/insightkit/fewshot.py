@@ -64,7 +64,8 @@ class FewShotStore:
         async with MetaDB(self.path) as db:
             await db.execute(_DDL)
             cursor = await db.execute("SELECT COUNT(*) FROM few_shots")
-            return int((await cursor.fetchone())[0])
+            row = await cursor.fetchone()
+            return int(row[0]) if row else 0
 
     async def list_all(self, limit: int = 100) -> list[dict]:
         async with MetaDB(self.path) as db:

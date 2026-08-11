@@ -18,6 +18,7 @@ from insightkit.config import Config
 from insightkit.db.backends import SQLBackend, get_backend
 from insightkit.db.cache import load_schema, save_schema
 from insightkit.db.executor import DBError, TableNotFoundError
+from insightkit.db.schema import SchemaMetadata
 from insightkit.fewshot import FewShotStore
 from insightkit.llm.client import complete
 from insightkit.llm.explain import explain
@@ -50,7 +51,7 @@ class AskResult:
     rows: list[dict] | None = None  # raw result rows (PII-masked, capped)
 
 
-def _json_safe(v):
+def _json_safe(v: object) -> object:
     """Make values JSON-serializable (Decimal/date/bytes from DB drivers)."""
     from datetime import date, datetime
     from decimal import Decimal
@@ -68,7 +69,7 @@ def _json_safe(v):
     return v
 
 
-def _rows_for_output(df, limit: int = 50) -> list[dict]:
+def _rows_for_output(df: pl.DataFrame, limit: int = 50) -> list[dict]:
     """Result rows as JSON-ready dicts — PII-masked, capped, JSON-safe."""
     from insightkit.security.guard import mask_pii
 
@@ -97,7 +98,7 @@ class InsightKit:
         self.fewshots = FewShotStore(cfg)
         self.semantic = semantic or SemanticLayer()
         self.client = client
-        self._schema = None
+        self._schema: SchemaMetadata | None = None
         self._schema_version = "0"
 
     @property
@@ -131,7 +132,7 @@ class InsightKit:
         self._schema = meta
         self._schema_version = meta.extracted_at.isoformat()
 
-    async def _get_schema(self):
+    async def _get_schema(self) -> SchemaMetadata | None:
         if self._schema is None:
             if self.engine is not None:
                 self._schema = await load_schema(self.cfg, self.db_key)
@@ -154,6 +155,7 @@ class InsightKit:
 
         # 1. cache
         schema = await self._get_schema()
+        assert schema is not None, "schema unavailable"
         key = query_hash(question, role, self._schema_version)
         cached = await self.cache.get(key)
         if cached:
@@ -180,6 +182,7 @@ class InsightKit:
 
         for attempt in range(MAX_ATTEMPTS):
             result.attempts = attempt + 1
+            assert schema is not None
             prompt_schema = relevant_tables(schema, question, self.cfg.prompt.relevant_tables)
             prompt = build_prompt(
                 question,

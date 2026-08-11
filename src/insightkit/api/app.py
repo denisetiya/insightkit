@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -11,6 +12,7 @@ import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
+from openai import AsyncOpenAI
 from pydantic import BaseModel
 
 from insightkit.api.auth import RateLimiter, create_jwt, require_role
@@ -33,7 +35,7 @@ def _sse(event: str, data: dict) -> str:
 def create_app(
     cfg: Config,
     semantic: SemanticLayer | None = None,
-    client=None,
+    client: AsyncOpenAI | None = None,
 ) -> FastAPI:
     app = FastAPI(title="InsightKit API", version="0.1.0")
     # open CORS: API key auth protects the endpoints; UI dijalankan dari file:// / origin lain
@@ -53,7 +55,7 @@ def create_app(
     _init_state()  # eager init — works with ASGI transports that skip lifespan
 
     @asynccontextmanager
-    async def lifespan(app: FastAPI):
+    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         yield
         await app.state.kit.close()
 

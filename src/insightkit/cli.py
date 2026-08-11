@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 from pathlib import Path
 
 import typer
@@ -73,7 +74,7 @@ def init(
     sem = SemanticLayer.load(semantic)
     kit = InsightKit(cfg, semantic=sem)
 
-    async def _init() -> None:
+    async def _init() -> str | None:
         api_key = await kit.init(create_admin=create_admin)
         await kit.close()
         return api_key
@@ -164,7 +165,10 @@ def serve(
     from insightkit.api.app import run_server
 
     cfg = load_config(config)
-    run_server(cfg, semantic_path=semantic, host=host, port=port)
+    sem = semantic
+    if sem is None and os.environ.get("INSIGHTKIT_SEMANTIC_PATH"):
+        sem = Path(os.environ["INSIGHTKIT_SEMANTIC_PATH"])
+    run_server(cfg, semantic_path=sem, host=host, port=port)
 
 
 @app.command()

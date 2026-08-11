@@ -36,7 +36,7 @@ class MetaDB:
         self._conn = await meta_connect(self.path)
         return self._conn
 
-    async def __aexit__(self, *exc) -> None:
+    async def __aexit__(self, *exc: object) -> None:
         await self._conn.close()
 
 

@@ -1,0 +1,46 @@
+# InsightKit + Ollama (LLM self-host) — Docker Compose
+# Cara pakai:
+#   1. cp deploy/.env.example deploy/.env   lalu isi (DB + LLM + JWT secret)
+#   2. (opsional) taruh semantic.yml di folder deploy/
+#   3. docker compose -f deploy/docker-compose.yml up -d
+#   4. docker compose -f deploy/docker-compose.yml exec insightkit \
+#        insightkit user create --username admin --role admin
+#   5. Buka http://<server>:8000  → web UI / API
+
+services:
+  insightkit:
+    image: ghcr.io/denisetiya/insightkit:latest
+    container_name: insightkit
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      INSIGHTKIT_STORAGE__PATH: /data
+    volumes:
+      - ./data:/data                                  # audit, cache, users (WAJIB persist)
+      - ./semantic.yml:/config/semantic.yml:ro        # opsional
+    depends_on:
+      - ollama
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # LLM self-host — matikan (hapus blok ini) kalau pakai LLM cloud
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    volumes:
+      - ./ollama:/root/.ollama                       # model tersimpan di sini
+    # GPU NVIDIA: buka komentar di bawah (butuh nvidia-container-toolkit)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]

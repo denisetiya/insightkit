@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import time
 from collections import defaultdict
+from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 
 import jwt
@@ -100,7 +101,7 @@ def get_auth(
     return {"username": username, "role": role}
 
 
-def require_role(required: str):
+def require_role(required: str) -> Callable[..., dict]:
     """Dependency factory: require a role level (viewer < analyst < admin)."""
 
     def dep(auth: dict = Depends(get_auth)) -> dict:

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from insightkit.db.schema import SchemaMetadata
+from insightkit.db.schema import SchemaMetadata, TableMeta
 
 SYSTEM_PROMPT = """You are InsightKit, an enterprise data analyst AI.
 You answer natural-language questions by writing SQL against a read-only database.
@@ -62,7 +62,7 @@ def relevant_tables(schema: SchemaMetadata, question: str, max_tables: int = 8) 
 
     q = _tokens(question)
 
-    def score(t) -> int:
+    def score(t: TableMeta) -> int:
         s = 0
         if _tokens(t.name) & q:
             s += 3
