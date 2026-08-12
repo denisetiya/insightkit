@@ -1,27 +1,33 @@
 # Changelog
 
-## 0.1.0 (2026-08-08) — MVP
+## 0.1.0 (2026-08-08): rilis awal
 
-**Core pipeline**
-- Auto schema extraction (introspection paralel): Postgres + SQLite (tabel, kolom, PK/FK, row count, sample values)
-- Text-to-SQL hand-rolled: prompt builder dengan token budget, LLM OpenAI-compatible (Ollama/vLLM/OpenAI/DeepSeek), JSON mode
-- Self-correction loop (max 3x): SQL error / guardrail reject / decline → feedback ke LLM → regenerate
-- Guardrails 2 lapis: engine read-only (SQLite `mode=ro`, PG `default_transaction_read_only`, MySQL session RO) + query-level check
-- Insight bahasa natural (EN/ID) + auto-chart plotly
-- PII masking (email, telepon, NIK, kartu) sebelum LLM & log
+Core pipeline:
 
-**Enterprise**
-- Audit log append-only, RBAC 3 role (viewer/analyst/admin), API key (SHA-256) + JWT, rate limit
-- Semantic layer YAML (metrik, glossary, alias)
-- Few-shot store + retrieval keyword-overlap
-- Model routing (fast model untuk query simpel)
-- Golden set eval dengan result-set comparison (regression gate ≥ 90%)
-- Cache hasil query (TTL, volatile-aware)
+* Schema extraction Postgres, MySQL, SQLite: tabel, kolom, PK, FK, row count, sample values
+* Text-to-SQL: prompt builder dengan token budget, LLM OpenAI-compatible, JSON mode
+* Self-correction maksimal 3 kali untuk SQL error dan guardrail reject
+* Guardrail dua lapis: engine read-only plus validasi query
+* Insight bahasa Inggris dan Indonesia plus chart Plotly
+* PII masking sebelum ke LLM dan log
 
-**Interfaces**
-- CLI: `init`, `ask`, `serve`, `refresh`, `eval`, `golden`, `semantic`, `user`, `example-config`
-- REST API (FastAPI + SSE streaming): `/auth/token`, `/ask`, `/schema`, `/schema/refresh`, `/health`, `/audit`, `/metrics`
+Akses dan eval:
 
-**Ops**
-- Docker image (slim, non-root, healthcheck), docs lengkap, CI (lint/mypy/test/build), benchmark gate
-- Performa terverifikasi: pipeline 54ms, cache hit 59ms, introspection 100 tabel 397ms (semua < budget)
+* Audit log append-only, RBAC viewer/analyst/admin, API key hash plus JWT, rate limit
+* Semantic layer YAML (metrik, glossary, alias)
+* Few-shot store dengan retrieval keyword overlap
+* Model routing untuk pertanyaan simpel
+* Golden set eval dengan result-set comparison
+* Cache hasil query dengan TTL, query volatile tidak di-cache
+
+Interface:
+
+* CLI: init, ask, serve, refresh, eval, golden, semantic, user, example-config
+* REST API FastAPI plus SSE: auth token, ask, schema, schema refresh, health, audit, metrics
+* Web UI satu file di `web/index.html`
+
+Ops:
+
+* Docker image non-root dengan healthcheck
+* CI: lint, type check, test, build
+* Konektor MongoDB (aggregation), OpenSearch (SQL plugin), Trino (REST)

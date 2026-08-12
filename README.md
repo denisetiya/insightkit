@@ -1,12 +1,8 @@
-<div align="center">
+# InsightKit
 
-# 📊 InsightKit
+Tanya database pakai bahasa Indonesia atau Inggris, dapat SQL, insight, dan chart.
 
-**Enterprise text-to-SQL analytics — natural language → SQL → insight**
-
-Tanya datamu pakai bahasa natural, dapatkan insight + chart otomatis.
-Dipakai **on-prem** di infrastruktur perusahaan, terhubung read-only ke database,
-dengan audit, guardrails, dan RBAC bawaan.
+InsightKit jalan on-prem di server sendiri. Koneksi database read-only. Setiap pertanyaan tercatat di audit log. Akses diatur per role.
 
 [![Python](https://img.shields.io/badge/python-3.11+-2563eb?logo=python&logoColor=white)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-06b6d4)](LICENSE)
@@ -14,42 +10,35 @@ dengan audit, guardrails, dan RBAC bawaan.
 [![GHCR](https://img.shields.io/github/actions/workflow/status/denisetiya/insightkit/publish.yml?label=GHCR&logo=docker)](https://github.com/denisetiya/insightkit/pkgs/container/insightkit)
 [![FastAPI](https://img.shields.io/badge/API-FastAPI-0b6e4f?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 
-</div>
+## Fitur
 
----
+* Natural language ke SQL. Schema dibaca otomatis dari database. Gagal eksekusi dicoba ulang maksimal 3 kali.
+* Keamanan dua lapis. User database read-only ditambah validasi query sebelum eksekusi. PII di-mask sebelum dikirim ke LLM dan sebelum masuk log. Tabel sensitif bisa diblokir.
+* Audit dan akses. Audit log append-only. Tiga role: viewer, analyst, admin. Auth pakai API key dan JWT.
+* Hasil lengkap. Insight dalam bahasa Inggris atau Indonesia, chart Plotly otomatis, dan raw rows dalam JSON.
+* Banyak database. PostgreSQL, MySQL, SQLite, MongoDB, OpenSearch, Trino.
+* Hemat token dan cepat. Streaming SSE, cache hasil query, model routing untuk pertanyaan simpel, budget token untuk prompt.
+* Eval terukur. Golden set dengan regression gate di CI.
 
-## ✨ Fitur
-
-| | |
-|---|---|
-| 🗣️ **Natural language → SQL** | Auto schema extraction, self-correcting (max 3x), JSON mode |
-| 🛡️ **Keamanan berlapis** | DB read-only (2 lapis), guardrail query, PII masking, tabel blacklist |
-| 📋 **Audit & compliance** | Append-only audit trail, RBAC (viewer/analyst/admin), JWT + API key |
-| 📈 **Insight + chart** | Jawaban bahasa natural (EN/ID) + auto-chart Plotly + raw result JSON |
-| 🗄️ **Multi-DB** | Postgres, MySQL, SQLite, MongoDB, OpenSearch, (Trino) |
-| ⚡ **Cepat & hemat** | Streaming SSE, caching, model routing, prompt token-budget |
-| 🎯 **Akurasi terukur** | Golden set evaluation + regression gate (≥ 90%) |
-| 📦 **Deploy fleksibel** | pip, Docker (non-root), on-prem, air-gapped |
-
-## 🚀 Quick start (2 menit)
+## Mulai cepat
 
 ```bash
-# install
 pip install insightkit
 
-# config + init (auto schema extraction)
-insightkit example-config -o insightkit.yml   # edit DSN + LLM
+insightkit example-config -o insightkit.yml
+# edit insightkit.yml: isi database.url dan llm.base_url
+
 insightkit init -c insightkit.yml --create-admin admin
 
-# tanya!
 insightkit ask "berapa total revenue bulan lalu?" -c insightkit.yml
 ```
 
-**Atau langsung jalan sebagai API server + web UI:**
+Jalan sebagai API server:
 
 ```bash
-insightkit serve -c insightkit.yml        # API → http://localhost:8000
-# buka web/chat.html di browser → isi URL + API key → tanya!
+insightkit serve -c insightkit.yml
+# API di http://localhost:8000
+# buka web/index.html di browser, isi URL dan API key, lalu tanya
 ```
 
 ```bash
@@ -58,74 +47,74 @@ curl -N -X POST http://localhost:8000/api/v1/ask \
   -d '{"question":"berapa total revenue dari orders yang status paid?"}'
 ```
 
-## 🖥️ Web UI (standalone)
+## Web UI
 
-`web/index.html` — chat UI single-file, tanpa build/server:
+`web/index.html` adalah chat UI satu file. Tidak perlu build.
 
-- Streaming SSE real-time
-- Tabel hasil query + chart Plotly + SQL viewer
-- API URL & key disimpan di localStorage
+* Streaming SSE
+* Tabel hasil, chart Plotly, viewer SQL
+* URL API dan key disimpan di localStorage browser
 
-## 🏗️ Arsitektur
+## Arsitektur
 
 ```
-pertanyaan ─▶ cache ─▶ konteks (schema relevan + semantic + few-shot)
-     ─▶ LLM (OpenAI-compatible) ─▶ SQL / aggregation
-     ─▶ guardrail (read-only, row-limit, PII, blacklist)
-     ─▶ execute (async, timeout) ─▶ self-correct (max 3x)
-     ─▶ insight + chart + raw result ─▶ audit log + cache
+pertanyaan -> cek cache -> susun konteks (schema, semantic, few-shot)
+  -> LLM (OpenAI-compatible) -> SQL
+  -> validasi (read-only, row limit, PII, blacklist)
+  -> eksekusi (async, timeout) -> koreksi otomatis bila gagal (maks 3x)
+  -> insight + chart + raw rows -> audit log + cache
 ```
 
-## 📚 Dokumentasi
+## Dokumentasi
 
-- [📦 Install & Deploy](docs/install.md) — pip / Docker / on-prem / air-gapped
-- [🐳 Docker Guide](docs/docker-guide.md) — langkah-demi-langkah konek ke DB perusahaan (compose + LLM + security)
-- [⚙️ Konfigurasi](docs/config.md) — YAML + env reference
-- [💻 CLI](docs/cli.md) — semua perintah
-- [🔌 API](docs/api.md) — per-endpoint (curl + TypeScript)
-- [🔒 Keamanan](docs/security.md) — guardrails, RBAC, audit, PII
-- [🧪 Evaluasi](docs/eval.md) — golden set & regression gate
-- [📖 PRD](docs/PRD.md) — spesifikasi produk
+* [Install dan Deploy](docs/install.md)
+* [Panduan Docker](docs/docker-guide.md)
+* [Konfigurasi](docs/config.md)
+* [CLI](docs/cli.md)
+* [API](docs/api.md)
+* [Keamanan](docs/security.md)
+* [Evaluasi](docs/eval.md)
+* [PRD](docs/PRD.md)
 
-## 🗄️ Database yang didukung
+## Database
 
-| DB | Status | Cara query |
-|---|---|---|
-| PostgreSQL | ✅ teruji live (10k rows) | SQL (SQLAlchemy async) |
-| MySQL | ✅ teruji live | SQL (asyncmy) |
-| SQLite | ✅ teruji live | SQL |
-| MongoDB | ✅ teruji live | Aggregation pipeline (guard write-stage) |
-| OpenSearch | ✅ teruji live | SQL plugin (REST) |
-| Trino | 🔧 kode siap, belum teruji | REST statement API |
+| DB | Cara query |
+|---|---|
+| PostgreSQL | SQL via SQLAlchemy async |
+| MySQL | SQL via asyncmy |
+| SQLite | SQL |
+| MongoDB | Aggregation pipeline, write stage diblokir |
+| OpenSearch | SQL plugin via REST |
+| Trino | REST statement API |
 
-> LLM apa pun yang OpenAI-compatible bisa dipakai: Ollama, vLLM, OpenAI, DeepSeek, dll.
+LLM apa pun yang OpenAI-compatible bisa dipakai: Ollama, vLLM, OpenAI, DeepSeek.
 
-## 🛡️ Keamanan (intisari)
+## Keamanan
 
-1. Koneksi **read-only** di level DB (`default_transaction_read_only`, `mode=ro`, session RO)
-2. **Guardrail query**: tolak DROP/DELETE/UPDATE, multi-statement, blacklist tabel
-3. **PII masking** sebelum LLM & log (email, telepon, NIK, kartu)
-4. **RBAC** viewer/analyst/admin + rate limit
-5. **Audit append-only** untuk setiap pertanyaan
+1. Koneksi read-only di level database. PostgreSQL pakai `default_transaction_read_only`, SQLite pakai `mode=ro`, MySQL pakai session read-only.
+2. Validasi query sebelum eksekusi. Tolak DROP, DELETE, UPDATE, multi-statement, dan tabel yang diblokir.
+3. PII di-mask sebelum ke LLM dan log (email, telepon, NIK, kartu).
+4. RBAC viewer, analyst, admin, plus rate limit per user.
+5. Audit append-only untuk setiap pertanyaan.
 
-## 🧪 Quality gates
+## Quality gates
 
 ```bash
-uv run pytest                       # unit + integration
-uv run pytest -m e2e                # live DB test (docker)
-uv run insightkit eval -g golden.yml  # akurasi ≥ 90% (exit 1 jika gagal)
-uv run mypy src/insightkit && uv run ruff check .   # type + lint
+uv run pytest
+uv run pytest -m e2e
+uv run insightkit eval -g golden.yml
+uv run mypy src/insightkit && uv run ruff check .
 ```
 
-## 🗺️ Roadmap
+## Rencana lanjut
 
-- [ ] Dashboard admin web (setup wizard, audit viewer, few-shot curation)
-- [ ] Conversation memory / follow-up ("kalau bulan ini?")
-- [ ] Row-level security per role
-- [ ] Slack/Teams bot & scheduled reports
-- [ ] BigQuery / Snowflake connector
-- [ ] OIDC SSO
+* Dashboard admin web (setup wizard, audit viewer, kurasi few-shot)
+* Memory percakapan untuk follow-up
+* Row-level security per role
+* Bot Slack/Teams dan scheduled report
+* Konektor BigQuery dan Snowflake
+* OIDC SSO
 
-## 📄 License
+## Lisensi
 
 [Apache-2.0](LICENSE)

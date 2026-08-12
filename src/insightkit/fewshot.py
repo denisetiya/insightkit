@@ -32,29 +32,38 @@ class FewShotStore:
     def __init__(self, cfg: Config) -> None:
         self.path: Path = meta_db_path(cfg)
 
-    async def add(self, question: str, sql: str, tags: str = "", source: str = "manual") -> None:
+    async def add(self, question: str, sql: str, tags: str = "", source: str = "manual") -> bool:
+        question = question.strip()
+        sql = sql.strip()
+        if not question or not sql:
+            raise ValueError("question and sql must be non-empty")
         async with MetaDB(self.path) as db:
             await db.execute(_DDL)
-            await db.execute(
+            cursor = await db.execute(
                 "INSERT OR IGNORE INTO few_shots "
                 "(question_hash, question, sql, tags, source, created_at) "
                 "VALUES (?, ?, ?, ?, ?, datetime('now'))",
                 (hashlib.sha256(question.encode()).hexdigest(), question, sql, tags, source),
             )
             await db.commit()
+            return cursor.rowcount > 0
 
     async def search(self, question: str, k: int = 3) -> list[tuple[str, str]]:
-        """Keyword-overlap retrieval (cheap, deterministic — no embeddings needed)."""
+        """Keyword-overlap retrieval (cheap, deterministic, no embeddings needed)."""
+        if k <= 0:
+            return []
         async with MetaDB(self.path) as db:
             await db.execute(_DDL)
             cursor = await db.execute("SELECT question, sql FROM few_shots")
             rows = await cursor.fetchall()
         if not rows:
             return []
-        q_tokens = _tokens(question)
+        q_tokens = {t for t in _tokens(question) if len(t) > 2}
+        if not q_tokens:
+            return []
         scored = []
         for stored_q, sql in rows:
-            overlap = len(q_tokens & _tokens(stored_q))
+            overlap = len(q_tokens & {t for t in _tokens(stored_q) if len(t) > 2})
             if overlap:
                 scored.append((overlap, stored_q, sql))
         scored.sort(key=lambda x: x[0], reverse=True)

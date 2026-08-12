@@ -13,8 +13,7 @@ from insightkit.db.schema import ColumnMeta, SchemaMetadata, TableMeta
 
 
 def meta_db_path(cfg: Config) -> Path:
-    cfg.storage.ensure()
-    return cfg.storage.path / cfg.storage.meta_db
+    return cfg.storage.ensure()
 
 
 async def meta_connect(path: Path) -> aiosqlite.Connection:
@@ -31,13 +30,20 @@ class MetaDB:
 
     def __init__(self, path: Path) -> None:
         self.path = path
+        self._conn: aiosqlite.Connection | None = None
 
     async def __aenter__(self) -> aiosqlite.Connection:
         self._conn = await meta_connect(self.path)
         return self._conn
 
-    async def __aexit__(self, *exc: object) -> None:
-        await self._conn.close()
+    async def __aexit__(self, exc_type: object, exc: object, tb: object) -> None:
+        assert self._conn is not None
+        try:
+            if exc_type is not None:
+                await self._conn.rollback()
+        finally:
+            await self._conn.close()
+            self._conn = None
 
 
 _SCHEMA_DDL = """
@@ -69,27 +75,31 @@ async def init_meta_db(cfg: Config) -> None:
 async def save_schema(cfg: Config, meta: SchemaMetadata) -> None:
     await init_meta_db(cfg)
     path = meta_db_path(cfg)
+    rows = [
+        (
+            meta.db_key,
+            t.name,
+            c.name,
+            c.data_type,
+            int(c.nullable),
+            int(c.is_pk),
+            c.fk_ref,
+            json.dumps(t.sample.get(c.name, [])),
+            t.row_count,
+        )
+        for t in meta.tables
+        for c in t.columns
+    ]
     async with MetaDB(path) as db:
         await db.execute("DELETE FROM schema_meta WHERE db_key = ?", (meta.db_key,))
-        for t in meta.tables:
-            for c in t.columns:
-                await db.execute(
-                    "INSERT OR REPLACE INTO schema_meta "
-                    "(db_key, table_name, column_name, data_type, nullable, is_pk, "
-                    "fk_ref, sample_values, row_count) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    (
-                        meta.db_key,
-                        t.name,
-                        c.name,
-                        c.data_type,
-                        int(c.nullable),
-                        int(c.is_pk),
-                        c.fk_ref,
-                        json.dumps(t.sample.get(c.name, [])),
-                        t.row_count,
-                    ),
-                )
+        if rows:
+            await db.executemany(
+                "INSERT OR REPLACE INTO schema_meta "
+                "(db_key, table_name, column_name, data_type, nullable, is_pk, "
+                "fk_ref, sample_values, row_count) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                rows,
+            )
         await db.execute(
             "INSERT OR REPLACE INTO meta_info (key, value) VALUES ('schema_extracted_at', ?)",
             (meta.extracted_at.isoformat(),),
@@ -132,10 +142,21 @@ async def load_schema(cfg: Config, db_key: str) -> SchemaMetadata | None:
             )
         )
         if samples:
-            t.sample[column_name] = json.loads(samples)
+            try:
+                parsed = json.loads(samples)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(parsed, list):
+                t.sample[column_name] = [str(v) for v in parsed]
+    try:
+        extracted_at = datetime.fromisoformat(extracted[0]) if extracted else datetime.now(UTC)
+    except ValueError:
+        extracted_at = datetime.now(UTC)
+    if extracted_at.tzinfo is None:
+        extracted_at = extracted_at.replace(tzinfo=UTC)
     return SchemaMetadata(
         db_key=db_key,
         dialect="",
         tables=list(tables.values()),
-        extracted_at=datetime.fromisoformat(extracted[0]) if extracted else datetime.now(UTC),
+        extracted_at=extracted_at,
     )

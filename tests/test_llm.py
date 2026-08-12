@@ -90,9 +90,20 @@ def test_parse_sql_plan_stray_text() -> None:
     assert plan.needs_data is False
 
 
+def test_parse_sql_plan_prose_answer() -> None:
+    # non-data question: model answered in prose without JSON → non-data answer
+    plan = parse_sql_plan(
+        "Berikut rekomendasi untuk meningkatkan revenue:\n1. Fokus pada pelanggan kota besar"
+    )
+    assert plan.sql == ""
+    assert plan.needs_data is False
+    assert "rekomendasi" in plan.reasoning
+
+
 def test_parse_sql_plan_invalid() -> None:
+    # broken JSON (object started but unparseable) still raises
     with pytest.raises(SqlGenError):
-        parse_sql_plan("no json here at all")
+        parse_sql_plan('{"sql": "SELECT oops')
 
 
 @pytest.mark.asyncio

@@ -1,10 +1,10 @@
-# Evaluasi & Golden Set
+# Evaluasi dan Golden Set
 
 ## Konsep
 
-**Golden set** = kumpulan kasus (pertanyaan → SQL yang diharapkan / kata kunci hasil) yang diverifikasi manual. Dipakai sebagai **regression gate**: skor akurasi wajib ≥ threshold sebelum rilis/upgrade.
+Golden set adalah kumpulan kasus pertanyaan ke SQL yang sudah diverifikasi manual. Dipakai sebagai regression gate. Skor akurasi wajib mencapai threshold sebelum rilis atau upgrade.
 
-## Format (`golden.yml`)
+## Format golden.yml
 
 ```yaml
 - question: "berapa total revenue?"
@@ -12,20 +12,20 @@
 - question: "berapa jumlah orders?"
   sql_expected: "SELECT COUNT(*) FROM orders"
 - question: "berapa order yang pending?"
-  result_keywords: ["2"]        # cek insight mengandung kata ini
+  result_keywords: ["2"]
 ```
 
-Perbandingan **berbasis hasil eksekusi** (bukan teks SQL): query yang dihasilkan & SQL harapan dieksekusi, result set dibandingkan (urutan baris diabaikan, angka dinormalisasi). Robust terhadap variasi alias/format LLM. Jika SQL harapan tidak bisa dieksekusi → fallback perbandingan teks ternormalisasi.
+Perbandingan berbasis hasil eksekusi, bukan teks SQL. Query hasil model dan SQL harapan dieksekusi, lalu result set dibandingkan. Urutan baris diabaikan, angka dinormalisasi. Cara ini tahan terhadap variasi alias dan format LLM. Bila SQL harapan tidak bisa dieksekusi, dipakai fallback perbandingan teks yang dinormalisasi.
 
 ## Menjalankan
 
 ```bash
 insightkit eval -c insightkit.yml -g golden.yml --threshold 0.9
-# Score: 100% (3/3)   → exit 0
-# Score: 67% (2/3)    → exit 1 (gate gagal)
+# Score: 100% (3/3), exit 0
+# Score: 67% (2/3), exit 1, gate gagal
 ```
 
-## CI integration
+## Integrasi CI
 
 ```yaml
 - name: Golden set
@@ -33,10 +33,10 @@ insightkit eval -c insightkit.yml -g golden.yml --threshold 0.9
     uv run insightkit eval -c insightkit.yml -g tests/golden/orders.yml || exit 1
 ```
 
-> CI tanpa LLM: gunakan golden dengan `sql_expected` + jalankan dengan mock, atau pisahkan ke job dengan LLM key rahasia.
+CI tanpa LLM: pakai golden dengan `sql_expected` plus mock, atau pisahkan ke job dengan LLM key rahasia.
 
-## Praktik terbaik
+## Praktik yang disarankan
 
-- 10-50 kasus per skema inti; tambah tiap kali ketemu bug SQL.
-- Kasus yang gagal → perbaiki prompt/semantic layer → re-run, bukan hapus kasus.
-- Query yang berhasil & disetujui → tambahkan ke few-shot store (`insightkit user` → internal; otomatis dipakai sebagai contoh di prompt).
+* 10 sampai 50 kasus per skema inti. Tambah kasus baru setiap kali menemukan bug SQL.
+* Kasus gagal berarti perbaiki prompt atau semantic layer, lalu re-run. Jangan hapus kasus.
+* Query yang berhasil dan disetujui masukkan ke few-shot store supaya dipakai sebagai contoh di prompt.

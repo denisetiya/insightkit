@@ -1,6 +1,6 @@
-# Install & Deployment
+# Install dan Deploy
 
-## 1. pip (tim data engineer, quick start)
+## 1. pip
 
 ```bash
 pip install insightkit
@@ -8,9 +8,9 @@ insightkit example-config -o insightkit.yml
 insightkit init -c insightkit.yml
 ```
 
-Requirement: Python 3.11+.
+Butuh Python 3.11+.
 
-## 2. Docker (standar enterprise)
+## 2. Docker
 
 ```bash
 docker build -t insightkit:0.1.0 .
@@ -29,33 +29,33 @@ docker run -d \
   ghcr.io/<org>/insightkit:0.1.0
 ```
 
-- Image non-root (user `insightkit`, uid 1001), healthcheck `/api/v1/health`.
-- `/data` = meta store (audit log, cache, schema cache, users) — **wajib volume persistent**.
-- Konfigurasi via env `INSIGHTKIT_<SECTION>__<KEY>` (mengalahkan YAML).
+* Image jalan sebagai non-root (user `insightkit`), ada healthcheck di `/api/v1/health`.
+* `/data` adalah meta store (audit log, cache, schema cache, users). Wajib dipasang sebagai volume persistent.
+* Config via env `INSIGHTKIT_<SECTION>__<KEY>`. Nilai env mengalahkan YAML.
 
-## 3. On-prem di server perusahaan (VM/K8s)
+## 3. On-prem di server perusahaan
 
-Kebutuhan dari sisi perusahaan:
+Yang perlu disiapkan perusahaan:
 
 | Item | Keterangan |
-|------|-----------|
-| Akses DB read-only | satu user khusus (bukan admin). PG: `GRANT CONNECT, SELECT ON ALL TABLES IN SCHEMA public TO insightkit_ro;` |
-| LLM | API key sendiri, atau model self-host (Ollama/vLLM) di infra mereka |
+|---|---|
+| Akses database read-only | Satu user khusus, bukan admin. Contoh Postgres: `GRANT CONNECT, SELECT ON ALL TABLES IN SCHEMA public TO insightkit_ro;` |
+| LLM | API key sendiri, atau model self-host (Ollama atau vLLM) di infra mereka |
 | Admin pertama | `insightkit user create --username admin --role admin` |
-| Opsional | SSO OIDC (fase lanjut), audit export, Prometheus scrape `/api/v1/metrics` |
+| Opsional | SSO OIDC tahap lanjut, export audit, scrape Prometheus ke `/api/v1/metrics` |
 
-## 4. Air-gapped (bank/pemerintah — tanpa internet)
+## 4. Air-gapped
 
-Semua komponen berjalan offline:
+Semua komponen jalan offline:
 
-- LLM self-host: Ollama atau vLLM di GPU internal (model `qwen2.5-coder` / `deepseek-coder` / model lain yang disetujui).
-- Embedding: tidak dipakai untuk mode statis (schema ≤ 200 tabel).
-- Install: transfer wheel + deps via registry PyPI internal (`uv pip install --find-links /opt/wheels ...`), atau image Docker di registry internal.
+* LLM self-host: Ollama atau vLLM di GPU internal.
+* Tidak ada embedding untuk schema sampai 200 tabel.
+* Install: transfer wheel plus deps via registry PyPI internal, atau image Docker di registry internal.
 
-Tidak ada panggilan keluar yang wajib — library hanya memanggil `llm.base_url` yang kamu tentukan.
+Tidak ada panggilan keluar yang wajib. Library hanya memanggil `llm.base_url` yang kamu tentukan.
 
-## 5. Upgrade & rollback
+## 5. Upgrade dan rollback
 
-- Meta store SQLite backward-compatible (DDL idempotent `IF NOT EXISTS`).
-- Image Docker di-tag semver; rollback = deploy image lama + restore `/data` dari backup.
-- Evaluasi golden set wajib ≥ 90% sebelum upgrade (lihat [eval.md](eval.md)).
+* Meta store SQLite backward-compatible (DDL idempotent).
+* Image Docker di-tag semver. Rollback artinya deploy image lama plus restore `/data` dari backup.
+* Golden set eval wajib minimal 90 persen sebelum upgrade (lihat [eval.md](eval.md)).

@@ -20,12 +20,22 @@ _NO_DATA = {
 }
 
 
-def _mask_rows(df: pl.DataFrame) -> list[dict]:
-    rows = df.head(20).to_dicts()
-    masked: list[dict] = []
-    for row in rows:
-        masked.append({k: mask_pii(str(v)) if isinstance(v, str) else v for k, v in row.items()})
-    return masked
+_EXPLAIN_ROW_LIMIT = 20
+_EXPLAIN_MAX_TOKENS = 600
+_EXPLAIN_MAX_CELL_CHARS = 500
+
+
+def _mask_value(value: object) -> object:
+    if isinstance(value, str):
+        return mask_pii(value[:_EXPLAIN_MAX_CELL_CHARS])
+    text = str(value)
+    masked = mask_pii(text)
+    return masked if masked != text else value
+
+
+def _mask_rows(df: pl.DataFrame, limit: int = _EXPLAIN_ROW_LIMIT) -> list[dict]:
+    rows = df.head(limit).to_dicts()
+    return [{k: _mask_value(v) for k, v in row.items()} for row in rows]
 
 
 async def explain(
@@ -42,7 +52,7 @@ async def explain(
     rows = _mask_rows(df)
     hint = _LANG.get(cfg.insight.language, _LANG["en"])
     user = (
-        f"Question: {question}\n\n"
+        f"Question: {question.strip()}\n\n"
         f"RESULT ({df.height} rows, showing first {len(rows)}):\n{rows}\n\n"
         f"{hint}"
     )
@@ -52,7 +62,7 @@ async def explain(
             {
                 "role": "system",
                 "content": (
-                    "You are InsightKit, an enterprise data analyst. Summarize the "
+                    "You are a data analyst. Summarize the "
                     "query result into a concise insight: key numbers, the main "
                     "finding, and one recommendation. "
                     "Only state facts present in the result."
@@ -62,6 +72,9 @@ async def explain(
         ],
         model=model,
         client=client,
-        max_tokens=600,  # insights are short — cap speeds generation
+        max_tokens=_EXPLAIN_MAX_TOKENS,
     )
-    return raw.strip()
+    stripped = raw.strip()
+    if not stripped:
+        return _NO_DATA.get(cfg.insight.language, _NO_DATA["en"])
+    return stripped

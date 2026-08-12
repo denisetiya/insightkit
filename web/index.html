@@ -228,7 +228,7 @@ function handle(block, idx){
   if (!ev || !dm) return;
   let d; try { d = JSON.parse(dm[1]); } catch { return; }
   if (ev === "plan") { const b = $("ai-" + idx); if (b) b.querySelector(".thinking").textContent = `Memproses dengan ${d.model} (${d.schema_tables} tabel)…`; }
-  else if (ev === "retry") { const b = $("ai-" + idx); if (b) b.querySelector(".thinking").textContent = `Coba ulang: ${d.error}…`; }
+  else if (ev === "retry") { const b = $("ai-" + idx); if (b) b.querySelector(".thinking").textContent = `Model mencoba lagi… (percobaan ${d.attempt})`; }
   else if (ev === "sql") { r.sql = d.sql; }
   else if (ev === "result") { r.columns = d.columns; r.rows = d.rows; r.row_count = d.row_count; }
   else if (ev === "insight") { r.insight = d.insight; }

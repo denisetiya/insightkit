@@ -2,44 +2,75 @@
 
 from __future__ import annotations
 
+import re
+
 from insightkit.db.schema import SchemaMetadata, TableMeta
 
-SYSTEM_PROMPT = """You are InsightKit, an enterprise data analyst AI.
-You answer natural-language questions by writing SQL against a read-only database.
-STRICT RULES:
-1. Respond with a SINGLE JSON object, no markdown fences, no extra text:
-   {"sql": "<read-only SQL or empty string>", "reasoning": "<short reasoning>",
-    "needs_data": <true|false>}
-2. Use ONLY table and column names that exist in the provided schema. Never invent columns.
-3. SQL must be read-only (SELECT / WITH ... SELECT). Never DROP, DELETE, UPDATE, INSERT,
-   ALTER, TRUNCATE, GRANT.
-4. If the question cannot be answered with the available schema, set needs_data to false
-   and sql to "".
-5. If metric definitions are provided, use them verbatim for the metric definition.
-6. Respect the row limit; add LIMIT if needed.
-7. When the question asks for insight over data, prefer aggregations (SUM, COUNT, AVG,
-   GROUP BY) over raw rows."""
+SYSTEM_PROMPT = """You are InsightKit, a data analyst. Write read-only SQL from the schema.
+Return one JSON object only, no fences or extra text: {"sql": "<SELECT/WITH or empty>",
+"reasoning": "<short>", "needs_data": bool, "queries": [...] optional}.
+Use only schema tables/columns, never invent names. SQL must be SELECT or WITH...SELECT.
+Never DROP/DELETE/UPDATE/INSERT/ALTER/TRUNCATE/GRANT. Respect row limit, add LIMIT.
+Advice questions: do not use general knowledge. Return 2-4 independent read-only queries
+in "queries" with sql "" and needs_data true. Non-data questions: answer in "reasoning"
+with sql "" and needs_data false. Use provided metric definitions verbatim.
+Prefer aggregations over raw rows."""
 
-MONGO_SYSTEM_PROMPT = """You are InsightKit, an enterprise data analyst AI.
-You answer natural-language questions about a MongoDB database by writing aggregation pipelines.
-STRICT RULES:
-1. Respond with a SINGLE JSON object, no markdown fences, no extra text:
-   {"sql": "<JSON payload as a string>", "reasoning": "<short reasoning>",
-    "needs_data": <true|false>}
-2. The "sql" field contains a JSON string: {"collection": "<collection name>",
-   "pipeline": [<aggregation stages>]} — valid MongoDB aggregation stages only.
-3. Use ONLY collection and field names that exist in the provided schema. Never invent fields.
-4. Read-only: NEVER use $out, $merge or $delete stages.
-5. If the question cannot be answered with the available schema, set needs_data to false
-   and sql to "".
-6. Prefer aggregation ($match, $group, $sort, $limit, $project, $count, $unwind) over
-   raw document dumps.
-7. The aggregation pipeline must be valid JSON — it will be parsed programmatically."""
+MONGO_SYSTEM_PROMPT = """You are InsightKit, a data analyst. Write MongoDB aggregation pipelines.
+Return one JSON object only, no fences or extra text: {"sql": "<{collection,pipeline} string>",
+"reasoning": "<short>", "needs_data": bool, "queries": [...] optional}.
+Use only schema collections/fields, never invent names. Read-only: never $out/$merge/$delete.
+Pipeline must be valid JSON. Advice questions: do not use general knowledge. Return 2-4
+independent pipelines in "queries". Non-data questions: answer in "reasoning" with sql ""
+and needs_data false. Prefer $match/$group/$sort/$limit over dumps."""
 
 _LANG_HINTS = {
     "en": "Answer in English.",
     "id": "Answer in Bahasa Indonesia.",
 }
+
+# Recommendation/advice questions → analysis mode: model plans 2-4 queries, results
+# are executed, then a data-grounded insight + recommendations is produced.
+_ANALYSIS_INTENT_RE = re.compile(
+    r"\b(rekomendasi|rekomend|saran|tips?|strategi|meningkatkan|tingkatkan|naikkan|"
+    r"optimasi|mengoptimalkan|optimize|improve|boost|pertumbuhan|tumbuhkan|grow)\w*\b",
+    re.IGNORECASE,
+)
+
+
+def is_analysis_question(question: str) -> bool:
+    """Recommendation/advice questions get the multi-query analysis flow."""
+    return bool(_ANALYSIS_INTENT_RE.search(question))
+
+
+_FINAL_PROMPTS = {
+    "en": (
+        "You are a data analyst. Based ONLY on the query results below, write:\n"
+        "1) \"insight\": a concise factual summary of what the data shows "
+        "(numbers from the results).\n"
+        "2) \"recommendations\": a list of 3-5 concrete, data-driven recommendations.\n"
+        "Never invent numbers that are not in the results. Respond with a single JSON object:\n"
+        "{\"insight\": \"...\", \"recommendations\": [\"...\", \"...\"]}"
+    ),
+    "id": (
+        "Kamu seorang analis data. Berdasarkan HANYA hasil query di bawah, tulis:\n"
+        "1) \"insight\": ringkasan faktual singkat tentang apa yang ditunjukkan data "
+        "(angka dari hasil query).\n"
+        "2) \"recommendations\": daftar 3-5 rekomendasi konkret berbasis data.\n"
+        "Jangan pernah mengarang angka yang tidak ada di hasil. Jawab dengan SATU objek JSON:\n"
+        "{\"insight\": \"...\", \"recommendations\": [\"...\", \"...\"]}"
+    ),
+}
+
+
+def build_final_prompt(question: str, results: list[dict], language: str = "en") -> str:
+    """Phase-2 prompt: question + executed query results → insight + recommendations."""
+    lines = [f"QUESTION: {question}", ""]
+    for i, res in enumerate(results, 1):
+        lines.append(f"QUERY {i}: {res['query']}")
+        lines.append(f"RESULT {i}: {res['rows']}")
+    body = "\n".join(lines)
+    return f"{_FINAL_PROMPTS.get(language, _FINAL_PROMPTS['en'])}\n\n{body}"
 
 
 def system_prompt_for(dialect: str) -> str:
@@ -113,55 +144,55 @@ def build_prompt(
     max_tokens: int = 3000,
 ) -> str:
     """Assemble system + context + question, trimming schema to fit the token budget."""
-    parts = [SYSTEM_PROMPT, _LANG_HINTS.get(language, _LANG_HINTS["en"])]
-
+    system = SYSTEM_PROMPT
+    lang_hint = _LANG_HINTS.get(language, _LANG_HINTS["en"])
+    extras: list[str] = []
     if semantic_text:
-        parts.append(f"METRIC DEFINITIONS:\n{semantic_text}")
-
+        extras.append(f"METRIC DEFINITIONS:\n{semantic_text}")
     if few_shots:
         shots = "\n".join(f"Q: {q}\nSQL: {s}" for q, s in few_shots[:3])
-        parts.append(f"EXAMPLE QUERIES:\n{shots}")
+        extras.append(f"EXAMPLE QUERIES:\n{shots}")
 
-    header = "\n\n".join(parts)
-    header_tokens = estimate_tokens(header)
-    budget = max_tokens - header_tokens - estimate_tokens(question) - 100
+    header = "\n\n".join([system, lang_hint, *extras])
+    budget = max_tokens - estimate_tokens(header) - estimate_tokens(question) - 100
 
     schema_text = schema.render() if schema else ""
-    if schema_text and estimate_tokens(schema_text) > budget:
-        assert schema is not None
-        schema_text = _trim_schema(schema, budget)
+    if schema_text and estimate_tokens(schema_text) > budget and schema is not None:
+        schema_text = _trim_schema(schema, max(budget, 0))
+        if estimate_tokens(schema_text) > max(budget, 0):
+            schema_text = ""
     if schema_text:
         header = f"{header}\n\nDATABASE SCHEMA:\n{schema_text}"
 
-    return f"{header}\n\nQUESTION: {question}"
+    prompt = f"{header}\n\nQUESTION: {question}"
+    if estimate_tokens(prompt) > max_tokens:
+        prompt = f"{system}\n\n{lang_hint}\n\nQUESTION: {question}"
+    return prompt
 
 
 def _trim_schema(schema: SchemaMetadata, budget: int) -> str:
     """Progressively trim schema: columns first (non-PK/FK), then tables."""
     import copy
 
+    if budget <= 0:
+        return ""
     slim = copy.deepcopy(schema)
     for t in slim.tables:
-        kept = [c for c in t.columns if c.is_pk or c.fk_ref]
-        t.columns = kept + [c for c in t.columns if c not in kept]
         t.sample = {}
-    text = slim.render()
+    text = slim.render(max_tables=len(slim.tables), max_cols_per_table=10)
     if estimate_tokens(text) <= budget:
         return text
 
-    # drop non-essential columns table by table
     while estimate_tokens(text) > budget and any(len(t.columns) > 1 for t in slim.tables):
         for t in slim.tables:
-            if len(t.columns) > 1:
-                # drop last (least essential)
+            while len(t.columns) > 1 and estimate_tokens(text) > budget:
                 t.columns.pop()
+                text = slim.render(max_tables=len(slim.tables), max_cols_per_table=len(t.columns))
         text = slim.render()
 
-    # still over: drop tables (keep those with FKs)
-    tables_with_fk = [t for t in slim.tables if any(c.fk_ref for c in t.columns)]
-    while estimate_tokens(text) > budget and len(slim.tables) > len(tables_with_fk):
-        drop = [t for t in slim.tables if not any(c.fk_ref for c in t.columns)]
-        for t in drop:
-            slim.tables.remove(t)
+    while estimate_tokens(text) > budget and len(slim.tables) > 1:
+        slim.tables.pop()
         text = slim.render()
+    if estimate_tokens(text) > budget:
+        return ""
     return text

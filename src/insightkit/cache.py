@@ -49,18 +49,32 @@ class QueryCache:
         if not row:
             return None
         result_json, expires_at = row
-        if datetime.fromisoformat(expires_at) < datetime.now(UTC):
+        try:
+            expires = datetime.fromisoformat(expires_at)
+        except ValueError:
             return None
-        return json.loads(result_json)
+        if expires.tzinfo is None:
+            expires = expires.replace(tzinfo=UTC)
+        if expires < datetime.now(UTC):
+            return None
+        try:
+            payload = json.loads(result_json)
+        except json.JSONDecodeError:
+            return None
+        return payload if isinstance(payload, dict) else None
 
     async def set(self, key: str, payload: dict) -> None:
         now = datetime.now(UTC)
         expires = now + timedelta(seconds=self.ttl_s)
+        try:
+            encoded = json.dumps(payload)
+        except (TypeError, ValueError):
+            return
         async with MetaDB(self.path) as db:
             await db.execute(_DDL)
             await db.execute(
                 "INSERT OR REPLACE INTO cache (query_hash, result_json, created_at, expires_at) "
                 "VALUES (?, ?, ?, ?)",
-                (key, json.dumps(payload), now.isoformat(), expires.isoformat()),
+                (key, encoded, now.isoformat(), expires.isoformat()),
             )
             await db.commit()

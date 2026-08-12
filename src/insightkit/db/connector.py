@@ -8,17 +8,21 @@ from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from insightkit.config import Config
 
+SUPPORTED_BACKENDS = frozenset({"postgresql", "mysql", "sqlite"})
+_SQLITE_PREFIX = "sqlite+aiosqlite:///"
+
 
 def _sqlite_read_only(url: str) -> str:
     """Force SQLite file connection into read-only URI mode."""
-    if "mode=ro" in url or ":memory:" in url:
+    if not url.startswith(_SQLITE_PREFIX):
         return url
-    prefix = "sqlite+aiosqlite:///"
-    if not url.startswith(prefix):
+    path_part = url[len(_SQLITE_PREFIX):]
+    if not path_part or path_part == ":memory:" or "mode=ro" in path_part:
         return url
-    rest = url[len(prefix) :]
-    sep = "?" if "?" not in rest else "&"
-    return f"{prefix}file:{rest}{sep}mode=ro&uri=true"
+    if path_part.startswith("file:"):
+        return url
+    sep = "&" if "?" in path_part else "?"
+    return f"{_SQLITE_PREFIX}file:{path_part}{sep}mode=ro&uri=true"
 
 
 def build_engine(cfg: Config) -> AsyncEngine:
@@ -26,10 +30,16 @@ def build_engine(cfg: Config) -> AsyncEngine:
 
     Layer 1 of the guardrail (layer 2 is query-level checks in security/guard.py).
     """
-    url = _sqlite_read_only(cfg.database.url)
-    parsed = URL.create(url)
+    raw_url = cfg.database.url.strip()
+    if not raw_url:
+        raise ValueError("database.url is empty")
+    url = _sqlite_read_only(raw_url)
+    try:
+        parsed = URL.create(url)
+    except Exception as exc:
+        raise ValueError(f"Invalid database URL: {exc}") from exc
     scheme = parsed.get_backend_name()
-    if scheme not in {"postgresql", "mysql", "sqlite"}:
+    if scheme not in SUPPORTED_BACKENDS:
         raise ValueError(
             f"Unsupported database backend: {scheme} (supported: postgresql, mysql, sqlite)"
         )
@@ -41,7 +51,12 @@ def build_engine(cfg: Config) -> AsyncEngine:
         connect_args = {"init_command": "SET SESSION TRANSACTION READ ONLY"}
 
     return create_async_engine(
-        url, connect_args=connect_args, pool_pre_ping=True, pool_recycle=1800
+        url,
+        connect_args=connect_args,
+        pool_pre_ping=True,
+        pool_recycle=1800,
+        pool_size=5,
+        max_overflow=10,
     )
 
 

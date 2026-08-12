@@ -28,9 +28,11 @@ def normalize_sql(sql: str) -> str:
     return _NORM_RE.sub(" ", cleaned.rstrip(";").lower())
 
 
-def _norm_value(v):
+def _norm_value(v: object) -> object:
     if v is None:
         return None
+    if isinstance(v, bool):
+        return v
     if isinstance(v, (int, float)):
         return round(float(v), 6)
     return str(v)
@@ -62,8 +64,26 @@ def load_golden(path: str | Path) -> list[GoldenCase]:
     p = Path(path)
     if not p.exists():
         raise FileNotFoundError(f"Golden set not found: {p}")
-    data = yaml.safe_load(p.read_text()) or []
-    return [GoldenCase(**case) for case in data]
+    try:
+        data = yaml.safe_load(p.read_text())
+    except yaml.YAMLError as exc:
+        raise ValueError(f"Invalid golden YAML {p}: {exc}") from exc
+    if data is None:
+        return []
+    if not isinstance(data, list):
+        raise ValueError(f"Invalid golden file {p}: top level must be a list")
+    cases: list[GoldenCase] = []
+    for i, item in enumerate(data):
+        if not isinstance(item, dict):
+            raise ValueError(f"Invalid golden case #{i} in {p}: must be a mapping")
+        try:
+            case = GoldenCase(**item)
+        except Exception as exc:
+            raise ValueError(f"Invalid golden case #{i} in {p}: {exc}") from exc
+        if not case.question.strip():
+            raise ValueError(f"Invalid golden case #{i} in {p}: question is empty")
+        cases.append(case)
+    return cases
 
 
 async def run_eval(
@@ -72,7 +92,7 @@ async def run_eval(
     client: AsyncOpenAI | None = None,
 ) -> EvalResult:
     kit = InsightKit(cfg, client=client)
-    await kit._get_schema()  # ensure schema cached before eval
+    await kit.get_schema()
 
     result = EvalResult(total=len(golden), correct=0)
     for case in golden:

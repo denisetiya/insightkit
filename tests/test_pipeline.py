@@ -45,7 +45,10 @@ def make_mock_llm(sql_router) -> tuple[AsyncOpenAI, httpx.MockTransport]:
         last_user = messages[-1]["content"]
         if isinstance(last_user, str) and last_user.startswith("Question:"):
             return _completion("Total paid revenue is 400.")
-        sql, needs_data = sql_router(last_user, messages)
+        out = sql_router(last_user, messages)
+        if isinstance(out, dict):
+            return _completion(json.dumps(out))
+        sql, needs_data = out
         plan = {"sql": sql or "", "reasoning": "r", "needs_data": needs_data}
         return _completion(json.dumps(plan))
 
@@ -190,4 +193,43 @@ async def test_stream_events(demo_db, tmp_path) -> None:
     assert "sql" in events
     assert "insight" in events
     assert events[-1] == "done"
+    await kit.close()
+
+
+@pytest.mark.asyncio
+async def test_ask_analysis_recommendation_data_driven(demo_db, tmp_path) -> None:
+    """Recommendation question → multi-query analysis: real results drive the answer."""
+
+    def router(content, messages):
+        if "QUERY 1:" in content:
+            # phase 3 — final answer grounded in the executed results
+            return {
+                "insight": "Data menunjukkan revenue 400 dari 2 kota (Jakarta, Bandung).",
+                "recommendations": [
+                    "Fokus promosi ke Jakarta — kontribusi revenue tertinggi.",
+                    "Dorong konversi order pending menjadi paid.",
+                ],
+            }
+        # phase 1 — plan analytical queries
+        return {
+            "queries": [
+                "SELECT c.city, SUM(o.amount) AS total FROM customers c "
+                "JOIN orders o ON o.customer_id = c.id WHERE o.status = 'paid' GROUP BY c.city",
+                "SELECT status, COUNT(*) AS n FROM orders GROUP BY status",
+            ],
+            "reasoning": "analisis per kota dan status",
+            "needs_data": True,
+            "sql": "",
+        }
+
+    client, transport = make_mock_llm(router)
+    kit = _kit(demo_db, tmp_path, client)
+    await kit.init()
+
+    result = await kit.ask("berikan rekomendasi untuk meningkatkan revenue")
+    assert result.status == "ok"
+    assert result.insight
+    assert "Rekomendasi" in result.insight or "Recommendations" in result.insight
+    assert "Jakarta" in result.insight  # grounded in executed query result
+    assert result.sql == ""
     await kit.close()

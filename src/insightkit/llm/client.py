@@ -22,6 +22,10 @@ class LLMError(RuntimeError):
 
 
 def build_client(cfg: Config, http_client: httpx.AsyncClient | None = None) -> AsyncOpenAI:
+    if not cfg.llm.base_url:
+        raise LLMError("LLM misconfigured: llm.base_url is empty")
+    if not cfg.llm.api_key:
+        raise LLMError("LLM misconfigured: llm.api_key is empty")
     return AsyncOpenAI(
         base_url=cfg.llm.base_url,
         api_key=cfg.llm.api_key,

@@ -30,12 +30,13 @@ def _env_overrides() -> dict:
 
 
 def _deep_merge(base: dict, override: dict) -> dict:
+    merged = dict(base)
     for key, value in override.items():
-        if isinstance(value, dict) and isinstance(base.get(key), dict):
-            _deep_merge(base[key], value)
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            merged[key] = _deep_merge(merged[key], value)
         else:
-            base[key] = value
-    return base
+            merged[key] = value
+    return merged
 
 
 class DatabaseConfig(BaseModel):
@@ -91,8 +92,9 @@ class StorageConfig(BaseModel):
     path: Path = Path.home() / ".insightkit"
     meta_db: str = "meta.db"
 
-    def ensure(self) -> None:
+    def ensure(self) -> Path:
         self.path.mkdir(parents=True, exist_ok=True)
+        return self.path / self.meta_db
 
 
 class Config(BaseSettings):

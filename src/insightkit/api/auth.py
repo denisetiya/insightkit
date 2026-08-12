@@ -58,7 +58,7 @@ def _role_sufficient(user_role: str, required: str) -> bool:
     return ROLE_LEVEL.get(user_role, 0) >= ROLE_LEVEL.get(required, 99)
 
 
-def get_auth(
+async def get_auth(
     request: Request,
     authorization: str | None = Header(default=None),
     x_api_key: str | None = Header(default=None),
@@ -77,18 +77,7 @@ def get_auth(
         if claims:
             username, role = claims.get("sub"), claims.get("role")
     elif x_api_key:
-        # sync dependency → run the async store call on the current loop
-        import asyncio
-
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            loop = None
-        if loop and loop.is_running():
-            future = asyncio.run_coroutine_threadsafe(store.verify(x_api_key), loop)
-            user = future.result(timeout=5)
-        else:
-            user = asyncio.run(store.verify(x_api_key))
+        user = await store.verify(x_api_key)
         if user:
             username, role = user["username"], user["role"]
 

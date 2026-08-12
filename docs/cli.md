@@ -1,8 +1,8 @@
-# CLI Reference
+# Referensi CLI
 
-Semua perintah: `insightkit <command> [options]`. Umum: `-c/--config` (default `insightkit.yml`), `--semantic <file>`.
+Semua perintah: `insightkit <command> [options]`. Opsi umum: `-c/--config` (default `insightkit.yml`), `--semantic <file>`.
 
-## `example-config`
+## example-config
 
 Menulis template config.
 
@@ -10,75 +10,75 @@ Menulis template config.
 insightkit example-config -o insightkit.yml
 ```
 
-## `init`
+## init
 
-Konek DB → auto schema extraction → cache schema → siapkan meta store. Opsional buat admin.
+Konek ke database, baca schema otomatis, simpan cache schema, siapkan meta store. Bisa sekaligus buat admin.
 
 ```bash
 insightkit init -c insightkit.yml --semantic semantic.yml --create-admin admin
-# → Admin user 'admin' created. API key (show once): ik_...
 ```
 
-Verifikasi: `Connected OK — schema cached (db_key=...)`.
+Output sukses: `Connected OK` plus info schema cached dan `db_key`. API key admin tampil sekali, simpan segera.
 
-## `ask`
+## ask
 
-Pertanyaan bahasa natural → insight.
+Pertanyaan bahasa natural menjadi insight.
 
 ```bash
 insightkit ask "berapa total revenue bulan lalu?" -c insightkit.yml
-insightkit ask "berapa total revenue bulan lalu?" --json   # output JSON (sql, insight, chart, latency, tokens, model)
+insightkit ask "berapa total revenue bulan lalu?" --json -c insightkit.yml
 ```
 
-## `serve`
+Flag `--json` mengeluarkan output mesin: sql, insight, chart, latency, tokens, model.
 
-Jalankan REST API (FastAPI + SSE streaming).
+## serve
+
+Jalankan REST API dengan streaming SSE.
 
 ```bash
 insightkit serve -c insightkit.yml --semantic semantic.yml --host 0.0.0.0 --port 8000
 ```
 
-## `refresh`
+## refresh
 
-Re-introspect schema (setelah migrasi tabel).
+Baca ulang schema database setelah migrasi tabel.
 
 ```bash
 insightkit refresh -c insightkit.yml
 ```
 
-## `eval`
+## eval
 
-Jalankan golden-set evaluation. **Exit code 1 jika skor < threshold** (CI gate).
+Jalankan eval golden set. Exit code 1 bila skor di bawah threshold. Dipakai sebagai gate di CI.
 
 ```bash
 insightkit eval -c insightkit.yml -g golden.yml --threshold 0.9
-# → Score: 100% (3/3)
 ```
 
-## `golden`
+## golden
 
-Validasi & preview file golden set.
+Validasi dan preview file golden set.
 
 ```bash
 insightkit golden -g golden.yml
 ```
 
-## `semantic`
+## semantic
 
-Validasi & preview file semantic layer.
+Validasi dan preview file semantic layer.
 
 ```bash
 insightkit semantic semantic.yml
 ```
 
-## `user`
+## user
 
-Manajemen user API (RBAC: `admin` / `analyst` / `viewer`).
+Kelola user API dengan role `admin`, `analyst`, atau `viewer`.
 
 ```bash
-insightkit user create --username analis --role analyst -c insightkit.yml   # API key ditampilkan SEKALI
+insightkit user create --username analis --role analyst -c insightkit.yml
 insightkit user list -c insightkit.yml
 insightkit user delete --username analis -c insightkit.yml
 ```
 
-> API key hanya tampil saat create — simpan segera. Tersimpan sebagai hash SHA-256.
+API key hanya tampil saat create. Di database yang tersimpan hanya hash SHA-256.

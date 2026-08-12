@@ -125,9 +125,7 @@ def create_app(
     @app.get("/api/v1/schema")
     async def schema_view(auth: dict = Depends(require_role("viewer"))) -> dict:
         kit: InsightKit = app.state.kit
-        schema = await kit._get_schema()
-        if schema is None:
-            raise HTTPException(status_code=503, detail="Schema not initialized — run refresh")
+        schema = await kit.get_schema()
         return {
             "db_key": kit.db_key,
             "dialect": schema.dialect,
