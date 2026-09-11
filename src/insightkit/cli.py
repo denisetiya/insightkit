@@ -92,6 +92,7 @@ def ask(
     semantic: Path | None = typer.Option(None, "--semantic"),
     user: str = typer.Option("cli", "--user", "-u"),
     role: str = typer.Option("analyst", "--role", "-r"),
+    model: str | None = typer.Option(None, "--model", "-m", help="Override LLM model name"),
     json_output: bool = typer.Option(False, "--json", help="Emit machine-readable JSON"),
 ) -> None:
     """Ask a question in natural language; get an insight."""
@@ -100,7 +101,7 @@ def ask(
     kit = InsightKit(cfg, semantic=sem)
 
     async def _ask() -> None:
-        result = await kit.ask(question, user=user, role=role)
+        result = await kit.ask(question, user=user, role=role, model=model)
         await kit.close()
         if json_output:
             try:

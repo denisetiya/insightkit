@@ -80,12 +80,13 @@ async def test_ask_sse_stream(app_and_key) -> None:
     async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://t") as ac:
         r = await ac.post(
             "/api/v1/ask",
-            json={"question": "berapa total revenue?"},
+            json={"question": "berapa total revenue?", "model": "custom-model-test"},
             headers={"X-API-Key": admin_key},
         )
     assert r.status_code == 200
     body = r.text
     assert "event: plan" in body
+    assert "custom-model-test" in body
     assert "event: sql" in body
     assert "event: insight" in body
     assert "event: done" in body

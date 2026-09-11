@@ -176,6 +176,7 @@ class InsightKit:
         user: str = "cli",
         role: str = "analyst",
         stream: EventCallback | None = None,
+        model: str | None = None,
     ) -> AskResult:
         """Full pipeline with self-correction. Streams progress events when `stream` given."""
         t0 = time.monotonic()
@@ -183,7 +184,9 @@ class InsightKit:
 
         # 1. cache
         schema = await self.get_schema()
-        key = query_hash(question, role, self._schema_version)
+        model = model or pick_model(self.cfg, question, len(schema.tables))
+        result.model = model
+        key = query_hash(question, role, self._schema_version, model)
         cached = await self.cache.get(key)
         if cached:
             result = AskResult(**{**cached, "question": question, "cached": True})
@@ -192,8 +195,6 @@ class InsightKit:
                 await stream("cached", {"insight": result.insight})
             return result
 
-        model = pick_model(self.cfg, question, len(schema.tables))
-        result.model = model
         semantic_text = self.semantic.render()
         few_shots = await self.fewshots.search(question)
 

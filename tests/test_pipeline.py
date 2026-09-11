@@ -202,15 +202,15 @@ async def test_ask_analysis_recommendation_data_driven(demo_db, tmp_path) -> Non
 
     def router(content, messages):
         if "QUERY 1:" in content:
-            # phase 3 — final answer grounded in the executed results
+            # phase 3, final answer grounded in the executed results
             return {
                 "insight": "Data menunjukkan revenue 400 dari 2 kota (Jakarta, Bandung).",
                 "recommendations": [
-                    "Fokus promosi ke Jakarta — kontribusi revenue tertinggi.",
+                    "Fokus promosi ke Jakarta, kontribusi revenue tertinggi.",
                     "Dorong konversi order pending menjadi paid.",
                 ],
             }
-        # phase 1 — plan analytical queries
+        # phase 1, plan analytical queries
         return {
             "queries": [
                 "SELECT c.city, SUM(o.amount) AS total FROM customers c "

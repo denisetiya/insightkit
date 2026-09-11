@@ -378,9 +378,79 @@
 
   /* Input Deck */
   .composer-dock {
-    padding: 14px 16px;
+    padding: 12px 16px 14px;
     border-top: 1px solid var(--border);
     background: var(--bg-surface);
+  }
+  .model-config-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  .model-input-frame {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-app);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    flex: 1;
+    min-width: 170px;
+    max-width: 320px;
+    transition: border-color 0.15s var(--ease-out), box-shadow 0.15s var(--ease-out);
+  }
+  .model-input-frame:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-focus);
+    background: var(--bg-surface);
+  }
+  .model-prefix-label {
+    font-weight: 600;
+    color: var(--text-faint);
+    flex-shrink: 0;
+  }
+  .model-text-input {
+    border: none;
+    background: transparent;
+    color: var(--text-main);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    width: 100%;
+    outline: none;
+  }
+  .model-pill-deck {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .model-quick-pill {
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 10.5px;
+    font-family: var(--font-mono);
+    border-radius: 4px;
+    padding: 2px 7px;
+    cursor: pointer;
+    transition: all 0.12s var(--ease-out);
+  }
+  .model-quick-pill:hover {
+    border-color: var(--accent);
+    color: var(--text-main);
+  }
+  .model-quick-pill.active {
+    background: var(--badge-bg);
+    color: var(--badge-text);
+    border-color: var(--badge-text);
+    font-weight: 600;
   }
   .composer-shell {
     display: flex;
@@ -788,6 +858,22 @@
     </div>
 
     <div class="composer-dock">
+      <div class="model-config-bar">
+        <div class="model-input-frame" title="Ketik nama model LLM target yang digunakan">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          </svg>
+          <span class="model-prefix-label">Model:</span>
+          <input type="text" id="targetModelInput" class="model-text-input" placeholder="default (qwen2.5-coder)" aria-label="Nama model LLM">
+        </div>
+        <div class="model-pill-deck">
+          <button type="button" class="model-quick-pill active" data-model="">default</button>
+          <button type="button" class="model-quick-pill" data-model="qwen2.5-coder">qwen2.5</button>
+          <button type="button" class="model-quick-pill" data-model="deepseek-chat">deepseek</button>
+          <button type="button" class="model-quick-pill" data-model="gpt-4o">gpt-4o</button>
+        </div>
+      </div>
+
       <div class="composer-shell">
         <textarea id="mainQueryField" class="composer-textarea" rows="1" placeholder="Ketik pertanyaan analitik data... (Enter kirim, Shift+Enter baris baru)"></textarea>
         <button class="btn primary" id="triggerSendBtn" type="button">Kirim</button>
@@ -840,6 +926,11 @@
       <input type="password" id="apiKeyInput" class="dialog-input" placeholder="ik_...">
     </div>
 
+    <div class="dialog-field">
+      <label for="defaultModelConfigInput">Model Bawaan (Opsional)</label>
+      <input type="text" id="defaultModelConfigInput" class="dialog-input" placeholder="contoh: qwen2.5-coder, gpt-4o, deepseek-chat">
+    </div>
+
     <div class="dialog-telemetry" id="dialogStatusNote"></div>
 
     <div class="dialog-footer">
@@ -858,6 +949,7 @@ const store = {
   key: localStorage.getItem("ik_key") || "",
   mode: localStorage.getItem("ik_mode") || "demo",
   theme: localStorage.getItem("ik_theme") || "light",
+  model: localStorage.getItem("ik_model") || "",
   busy: false,
   records: [],
   activeCursor: -1,
@@ -883,11 +975,39 @@ function refreshConnectionPill() {
 }
 refreshConnectionPill();
 
+// Model Selector Controller
+function syncModelPills(currentModel) {
+  document.querySelectorAll(".model-quick-pill").forEach(pill => {
+    const target = pill.getAttribute("data-model");
+    pill.classList.toggle("active", target === currentModel);
+  });
+}
+
+$("targetModelInput").value = store.model;
+syncModelPills(store.model);
+
+$("targetModelInput").addEventListener("input", (e) => {
+  store.model = e.target.value.trim();
+  localStorage.setItem("ik_model", store.model);
+  syncModelPills(store.model);
+});
+
+document.querySelectorAll(".model-quick-pill").forEach(pill => {
+  pill.addEventListener("click", () => {
+    const val = pill.getAttribute("data-model");
+    $("targetModelInput").value = val;
+    store.model = val;
+    localStorage.setItem("ik_model", val);
+    syncModelPills(val);
+  });
+});
+
 // Modal logic
 function openConfigModal() {
   $("apiUrlInput").value = store.url;
   $("apiKeyInput").value = store.key;
   $("operationModeSelect").value = store.mode;
+  $("defaultModelConfigInput").value = store.model;
   $("dialogStatusNote").textContent = "";
   $("configDialog").classList.add("open");
   $("apiUrlInput").focus();
@@ -913,9 +1033,13 @@ $("applyConfigBtn").addEventListener("click", () => {
   store.url = $("apiUrlInput").value.trim().replace(/\/+$/, "");
   store.key = $("apiKeyInput").value.trim();
   store.mode = $("operationModeSelect").value;
+  store.model = $("defaultModelConfigInput").value.trim();
   localStorage.setItem("ik_url", store.url);
   localStorage.setItem("ik_key", store.key);
   localStorage.setItem("ik_mode", store.mode);
+  localStorage.setItem("ik_model", store.model);
+  $("targetModelInput").value = store.model;
+  syncModelPills(store.model);
   refreshConnectionPill();
   dismissConfigModal();
 });
@@ -1256,6 +1380,10 @@ async function submitAnalyticQuery(queryString) {
   const query = queryString.trim();
   if (!query || store.busy) return;
 
+  const chosenModel = $("targetModelInput").value.trim();
+  store.model = chosenModel;
+  localStorage.setItem("ik_model", chosenModel);
+
   $("emptyCanvas").style.display = "none";
   setBusyState(true);
 
@@ -1270,7 +1398,7 @@ async function submitAnalyticQuery(queryString) {
     row_count: 0,
     latency_ms: 0,
     tokens: 0,
-    model: "",
+    model: chosenModel,
     chart: null,
     error: ""
   });
@@ -1315,7 +1443,7 @@ async function submitAnalyticQuery(queryString) {
       target.row_count = mockResult.rows.length;
       target.latency_ms = mockResult.latency_ms;
       target.tokens = mockResult.tokens;
-      target.model = mockResult.model;
+      target.model = (chosenModel || "qwen2.5-coder") + " (sandbox demo)";
       target.chart = mockResult.chart;
 
       updateCardPresentation(idx);
@@ -1327,13 +1455,17 @@ async function submitAnalyticQuery(queryString) {
 
   // Live Server SSE
   try {
+    const payload = { question: query };
+    if (chosenModel) {
+      payload.model = chosenModel;
+    }
     const res = await fetch(`${store.url}/api/v1/ask`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "X-API-Key": store.key
       },
-      body: JSON.stringify({ question: query }),
+      body: JSON.stringify(payload),
     });
 
     if (!res.ok) {

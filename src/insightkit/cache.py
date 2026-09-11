@@ -26,8 +26,8 @@ CREATE TABLE IF NOT EXISTS cache (
 """
 
 
-def query_hash(question: str, role: str, schema_version: str) -> str:
-    return hashlib.sha256(f"{role}|{schema_version}|{question}".encode()).hexdigest()
+def query_hash(question: str, role: str, schema_version: str, model: str = "") -> str:
+    return hashlib.sha256(f"{role}|{schema_version}|{model}|{question}".encode()).hexdigest()
 
 
 def is_cacheable(sql: str) -> bool:

@@ -678,7 +678,10 @@
       <div class="stage-core">
         <div class="stage-header-bar">
           <span>Simulator Pipeline Interaktif</span>
-          <span>Dialect: SQLite / PostgreSQL Async</span>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 11px; color: var(--text-faint);">Target Model:</span>
+            <input type="text" id="simModelInput" value="qwen2.5-coder" style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; font-family: var(--font-mono); font-size: 11px; color: var(--text-main); width: 140px;" aria-label="Target Model">
+          </div>
         </div>
 
         <div class="stage-content-split">
@@ -1025,10 +1028,12 @@ const pickerButtons = document.querySelectorAll(".stage-query-button");
 
 function displaySimulation(id) {
   const item = simulationCases[id] || simulationCases.q1;
+  const simModel = (document.getElementById("simModelInput")?.value || "qwen2.5-coder").trim();
   terminalTarget.innerHTML = `
     <div class="deck-card">
       <div class="deck-kpi-row">
         <span>Pertanyaan: <strong>${item.question}</strong></span>
+        <span>Model: <strong>${simModel}</strong></span>
         <span>Latensi: <strong>${item.latency}</strong></span>
         <span>Token: <strong>${item.tokens}</strong></span>
         <span>Hasil: <strong>${item.rowsCount}</strong></span>
@@ -1050,6 +1055,12 @@ function displaySimulation(id) {
     </div>
   `;
 }
+
+document.getElementById("simModelInput")?.addEventListener("input", () => {
+  const activeBtn = document.querySelector(".stage-query-button.active");
+  const currentId = activeBtn ? activeBtn.getAttribute("data-pick") : "q1";
+  displaySimulation(currentId);
+});
 
 pickerButtons.forEach(btn => {
   btn.addEventListener("click", () => {

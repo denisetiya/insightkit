@@ -25,6 +25,7 @@ from insightkit.semantic import SemanticLayer
 
 class AskBody(BaseModel):
     question: str
+    model: str | None = None
     role_override: str | None = None  # reserved for future per-request role scoping
 
 
@@ -95,7 +96,13 @@ def create_app(
                 await queue.put((event, data))
 
             task = asyncio.create_task(
-                kit.ask(body.question, user=auth["username"], role=auth["role"], stream=cb)
+                kit.ask(
+                    body.question,
+                    user=auth["username"],
+                    role=auth["role"],
+                    stream=cb,
+                    model=body.model,
+                )
             )
 
             try:

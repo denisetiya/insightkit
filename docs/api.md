@@ -30,12 +30,12 @@ Response: `{"token": "...", "username": "...", "role": "...", "expires_in_min": 
 
 Pertanyaan bahasa natural dengan SSE stream. Event: `plan`, `retry`, `schema_refresh`, `sql`, `result`, `insight`, `chart`, `done`.
 
-Body JSON: `{"question": string}`. Auth minimal viewer. Response `text/event-stream`.
+Body JSON: `{"question": string, "model": string | null}`. Auth minimal viewer. Response `text/event-stream`.
 
 ```bash
 curl -N -X POST http://localhost:8000/api/v1/ask \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -d '{"question":"berapa total revenue bulan lalu?"}'
+  -d '{"question":"berapa total revenue bulan lalu?", "model":"qwen2.5-coder"}'
 ```
 
 ```ts

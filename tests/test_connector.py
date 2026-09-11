@@ -49,7 +49,7 @@ async def test_engine_reads_ok(demo_db) -> None:
 @pytest.mark.asyncio
 async def test_ping_false_on_bad_db(tmp_path) -> None:
     cfg = Config(database={"url": f"sqlite+aiosqlite:///{tmp_path}/missing.db"})
-    engine = build_engine(cfg)  # read-only file: URI — missing file must fail
+    engine = build_engine(cfg)  # read-only file: URI, missing file must fail
     with pytest.raises(OperationalError):
         await ping(engine)
     await engine.dispose()
