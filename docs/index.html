@@ -3,8 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>InsightKit: Review Teknis dan Panduan Engine Text-to-SQL On-Premise</title>
-<meta name="description" content="Review arsitektur, fitur keamanan, benchmark performa, dan dokumentasi InsightKit. Library analitik text-to-SQL on-premise dengan koneksi read-only dan audit log.">
+<title>InsightKit: Review Teknis dan Mesin Analitik Text-to-SQL On-Premise</title>
+<meta name="description" content="Review arsitektur, keamanan data, benchmark performa, dan dokumentasi InsightKit. Mesin analitik text-to-SQL mandiri dengan koneksi database read-only.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg-page: #f8fafc;
@@ -15,19 +18,21 @@
     --text-main: #0f172a;
     --text-muted: #475569;
     --text-faint: #64748b;
-    --accent: #0369a1;
-    --accent-hover: #0284c7;
-    --accent-focus: rgba(3, 105, 161, 0.2);
-    --code-bg: #0f172a;
+    --accent: #0284c7;
+    --accent-hover: #0369a1;
+    --accent-focus: rgba(2, 132, 199, 0.2);
+    --code-bg: #0b0f19;
     --code-text: #f8fafc;
     --ok-text: #15803d;
-    --card-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
-    --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --ok-bg: #ecfdf5;
+    --card-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 6px 12px -2px rgba(15, 23, 42, 0.03);
+    --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, monospace;
+    --ease-fluid: cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   [data-theme="dark"] {
-    --bg-page: #090d16;
+    --bg-page: #080c14;
     --bg-surface: #0f172a;
     --bg-subtle: #1e293b;
     --border: #1e293b;
@@ -41,7 +46,8 @@
     --code-bg: #030712;
     --code-text: #f8fafc;
     --ok-text: #34d399;
-    --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --ok-bg: #064e3b;
+    --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -53,68 +59,88 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  /* Top Navigation */
-  header.site-nav {
+  /* Floating Island Navigation Bar */
+  .nav-wrapper {
     position: sticky;
-    top: 0;
+    top: 14px;
     z-index: 50;
-    background: var(--bg-surface);
-    border-bottom: 1px solid var(--border);
-    backdrop-filter: blur(8px);
-  }
-  .nav-inner {
-    max-width: 1140px;
+    max-width: 1040px;
     margin: 0 auto;
-    padding: 12px 20px;
+    padding: 0 16px;
+  }
+  nav.floating-island {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(14px);
+    border: 1px solid var(--border);
+    border-radius: 9999px;
+    padding: 6px 16px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
   }
-  .nav-brand {
+  [data-theme="dark"] nav.floating-island {
+    background: rgba(15, 23, 42, 0.85);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  }
+
+  .nav-identity {
     display: flex;
     align-items: center;
     gap: 10px;
     text-decoration: none;
     color: var(--text-main);
     font-weight: 700;
-    font-size: 16px;
+    font-size: 14.5px;
   }
-  .brand-badge {
+  .identity-dot {
+    width: 22px;
+    height: 22px;
+    background: var(--accent);
+    color: #ffffff;
+    border-radius: 6px;
+    display: grid;
+    place-items: center;
+    font-size: 11px;
+    font-weight: 800;
+  }
+  .identity-badge {
     font-size: 11px;
     font-family: var(--font-mono);
     color: var(--text-faint);
     background: var(--bg-subtle);
-    padding: 2px 6px;
+    padding: 1px 6px;
     border-radius: 4px;
     border: 1px solid var(--border);
   }
-  .nav-links {
+
+  .nav-anchors {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 18px;
     list-style: none;
   }
-  .nav-links a {
+  .nav-anchors a {
     text-decoration: none;
     color: var(--text-muted);
-    font-size: 13.5px;
-    font-weight: 500;
-    transition: color 0.15s;
+    font-size: 13px;
+    font-weight: 600;
+    transition: color 0.15s var(--ease-fluid);
   }
-  .nav-links a:hover {
+  .nav-anchors a:hover {
     color: var(--accent);
   }
-  .nav-actions {
+
+  .nav-utilities {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
   }
 
   .btn {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     padding: 7px 14px;
     font-size: 13px;
     font-weight: 600;
@@ -124,15 +150,14 @@
     background: var(--bg-surface);
     color: var(--text-main);
     cursor: pointer;
-    transition: background-color 0.15s, border-color 0.15s;
+    transition: background-color 0.15s var(--ease-fluid), border-color 0.15s var(--ease-fluid), transform 0.1s var(--ease-fluid);
   }
   .btn:hover {
     background: var(--bg-subtle);
     border-color: var(--border-strong);
   }
-  .btn:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 1px;
+  .btn:active {
+    transform: scale(0.98);
   }
   .btn.primary {
     background: var(--accent);
@@ -143,55 +168,65 @@
     background: var(--accent-hover);
     border-color: var(--accent-hover);
   }
+  .icon-round-pill {
+    width: 18px;
+    height: 18px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 10px;
+  }
 
   /* Main Container */
-  main {
-    max-width: 1140px;
+  main.editorial-canvas {
+    max-width: 1040px;
     margin: 0 auto;
     padding: 40px 20px 80px;
   }
 
-  /* Hero */
-  section.hero {
-    padding: 30px 0 50px;
+  /* Hero Section */
+  section.hero-stage {
+    padding: 40px 0 60px;
     border-bottom: 1px solid var(--border);
   }
-  .hero-tag {
+  .eyebrow-pill {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: 11px;
+    font-weight: 600;
     color: var(--accent);
     background: var(--bg-subtle);
-    padding: 4px 10px;
+    padding: 3px 10px;
     border-radius: 4px;
     border: 1px solid var(--border);
-    margin-bottom: 16px;
+    margin-bottom: 20px;
   }
-  h1.hero-title {
-    font-size: 34px;
+  h1.hero-headline {
+    font-size: 38px;
     font-weight: 800;
-    line-height: 1.25;
-    letter-spacing: -0.02em;
+    line-height: 1.2;
+    letter-spacing: -0.025em;
     max-width: 860px;
     margin-bottom: 16px;
   }
-  p.hero-lead {
+  p.hero-abstract {
     font-size: 16px;
     line-height: 1.6;
     color: var(--text-muted);
-    max-width: 760px;
-    margin-bottom: 24px;
+    max-width: 720px;
+    margin-bottom: 26px;
   }
-  .hero-buttons {
+  .hero-cta-cluster {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 12px;
     margin-bottom: 24px;
   }
-  .install-box {
+  .snippet-capsule {
     display: inline-flex;
     align-items: center;
     background: var(--code-bg);
@@ -199,251 +234,270 @@
     border-radius: 6px;
     padding: 8px 14px;
     font-family: var(--font-mono);
-    font-size: 13px;
+    font-size: 12.5px;
     border: 1px solid var(--border-strong);
   }
-  .install-box code {
+  .snippet-capsule code {
     margin-right: 12px;
   }
-  .install-copy {
+  .snippet-copy-btn {
     background: transparent;
     border: none;
     color: var(--text-faint);
     cursor: pointer;
-    font-size: 12px;
+    font-size: 11.5px;
     font-family: var(--font-mono);
     text-decoration: underline;
   }
-  .install-copy:hover {
-    color: #ffffff;
-  }
+  .snippet-copy-btn:hover { color: #ffffff; }
 
-  /* Editorial Review Section */
-  section.review-block {
-    padding: 50px 0;
-    border-bottom: 1px solid var(--border);
-  }
-  .section-eyebrow {
-    font-size: 11.5px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--accent);
-    margin-bottom: 8px;
-  }
-  h2.section-heading {
-    font-size: 24px;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-    margin-bottom: 14px;
-  }
-  p.section-desc {
-    font-size: 15px;
-    color: var(--text-muted);
-    max-width: 760px;
-    margin-bottom: 30px;
-  }
-
-  .review-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-  }
-  .review-card {
-    background: var(--bg-surface);
+  /* Double-Bezel Interactive Stage */
+  .stage-shell {
+    margin-top: 20px;
+    background: var(--bg-subtle);
     border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 24px;
+    border-radius: 12px;
+    padding: 4px;
     box-shadow: var(--card-shadow);
   }
-  .review-card h3 {
-    font-size: 16px;
-    font-weight: 700;
-    margin-bottom: 10px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .review-card p {
-    font-size: 13.5px;
-    color: var(--text-muted);
-    line-height: 1.6;
-    margin-bottom: 12px;
-  }
-  .review-card ul {
-    list-style: none;
-    padding-left: 0;
-    font-size: 13px;
-    color: var(--text-muted);
-  }
-  .review-card ul li {
-    position: relative;
-    padding-left: 18px;
-    margin-bottom: 6px;
-  }
-  .review-card ul li::before {
-    content: "•";
-    position: absolute;
-    left: 0;
-    color: var(--accent);
-    font-weight: bold;
-  }
-
-  /* Interactive Simulator Console */
-  section.interactive-demo {
-    padding: 50px 0;
-    border-bottom: 1px solid var(--border);
-  }
-  .console-box {
+  .stage-core {
     background: var(--bg-surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: 9px;
     overflow: hidden;
-    box-shadow: var(--card-shadow);
   }
-  .console-top {
+  .stage-header-bar {
     display: flex;
-    align-items: center;
     justify-content: space-between;
+    align-items: center;
     padding: 10px 16px;
     background: var(--bg-subtle);
     border-bottom: 1px solid var(--border);
     font-size: 12px;
     font-family: var(--font-mono);
   }
-  .console-body {
+  .stage-content-split {
     display: grid;
     grid-template-columns: 320px 1fr;
-    min-height: 420px;
+    min-height: 380px;
   }
-  .console-queries {
+  .stage-query-picker {
     border-right: 1px solid var(--border);
-    padding: 14px;
+    padding: 16px;
     background: var(--bg-surface);
   }
-  .console-queries-label {
+  .stage-picker-title {
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
+    letter-spacing: 0.08em;
     color: var(--text-faint);
     margin-bottom: 10px;
   }
-  .query-pick-btn {
+  .stage-query-button {
     display: block;
     width: 100%;
     text-align: left;
     background: var(--bg-subtle);
     border: 1px solid var(--border);
     border-radius: 6px;
-    padding: 8px 10px;
+    padding: 9px 12px;
     font-size: 12.5px;
     margin-bottom: 8px;
     color: var(--text-main);
     cursor: pointer;
-    transition: border-color 0.15s, background-color 0.15s;
+    transition: all 0.15s var(--ease-fluid);
   }
-  .query-pick-btn:hover {
+  .stage-query-button:hover {
     border-color: var(--accent);
   }
-  .query-pick-btn.active {
+  .stage-query-button.active {
     background: var(--accent);
     border-color: var(--accent);
     color: #ffffff;
     font-weight: 600;
   }
 
-  .console-output {
+  .stage-terminal-deck {
     padding: 20px;
     background: var(--bg-page);
-    overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 16px;
   }
-  .output-block {
+  .deck-card {
     background: var(--bg-surface);
     border: 1px solid var(--border);
     border-radius: 6px;
-    padding: 14px;
+    padding: 16px;
   }
-  .output-meta {
+  .deck-kpi-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 14px;
     font-family: var(--font-mono);
     font-size: 11.5px;
     color: var(--text-faint);
-    margin-bottom: 10px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
   }
-  .output-meta span strong { color: var(--text-main); }
-  .sql-view {
+  .deck-kpi-row strong { color: var(--text-main); }
+  .deck-insight-box {
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 13.5px;
+    line-height: 1.55;
+    margin-bottom: 12px;
+  }
+  .deck-sql-view {
     background: var(--code-bg);
     color: var(--code-text);
-    padding: 10px 12px;
+    padding: 12px;
     border-radius: 6px;
     font-family: var(--font-mono);
     font-size: 12px;
+    line-height: 1.45;
     overflow-x: auto;
     margin-top: 6px;
   }
-  .table-view-demo {
+  .deck-table-view {
     width: 100%;
     border-collapse: collapse;
     font-family: var(--font-mono);
     font-size: 12px;
     margin-top: 8px;
   }
-  .table-view-demo th, .table-view-demo td {
+  .deck-table-view th, .deck-table-view td {
     border: 1px solid var(--border);
     padding: 6px 10px;
     text-align: left;
   }
-  .table-view-demo th { background: var(--bg-subtle); }
+  .deck-table-view th { background: var(--bg-subtle); }
 
-  /* Architecture & Flow */
-  section.architecture {
-    padding: 50px 0;
+  /* Editorial Review Section */
+  section.review-dossier {
+    padding: 60px 0;
     border-bottom: 1px solid var(--border);
   }
-  .flow-diagram {
+  .section-tag {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  h2.section-title {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.015em;
+    margin-bottom: 12px;
+  }
+  p.section-summary {
+    font-size: 15px;
+    color: var(--text-muted);
+    max-width: 740px;
+    margin-bottom: 32px;
+  }
+
+  .comparison-bezel-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .bezel-box-outer {
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 3px;
+  }
+  .bezel-box-inner {
+    background: var(--bg-surface);
+    border-radius: 8px;
+    padding: 24px;
+    height: 100%;
+  }
+  .bezel-box-inner h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .bezel-box-inner p {
+    font-size: 13.5px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin-bottom: 14px;
+  }
+  .bezel-box-inner ul {
+    list-style: none;
+    padding-left: 0;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .bezel-box-inner ul li {
+    position: relative;
+    padding-left: 18px;
+    margin-bottom: 8px;
+    line-height: 1.5;
+  }
+  .bezel-box-inner ul li::before {
+    display: none;
+  }
+  .bullet-accent::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-weight: 800;
+  }
+
+  /* Architecture Flow Diagram */
+  section.architecture-flow {
+    padding: 60px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .pipeline-ascii {
     background: var(--code-bg);
     color: var(--code-text);
     border-radius: 8px;
-    padding: 20px;
+    padding: 20px 24px;
     font-family: var(--font-mono);
     font-size: 12.5px;
     line-height: 1.5;
     overflow-x: auto;
-    margin-bottom: 24px;
+    margin-bottom: 28px;
   }
-  .pillars-grid {
+  .triad-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 20px;
   }
-  .pillar-item {
+  .triad-card {
     background: var(--bg-surface);
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 20px;
+    box-shadow: var(--card-shadow);
   }
-  .pillar-item h4 {
+  .triad-card h4 {
     font-size: 15px;
     font-weight: 700;
     margin-bottom: 8px;
   }
-  .pillar-item p {
+  .triad-card p {
     font-size: 13px;
     color: var(--text-muted);
     line-height: 1.55;
   }
 
-  /* Benchmark Real Numbers */
-  section.benchmarks {
-    padding: 50px 0;
+  /* Real Measured Benchmarks */
+  section.benchmark-matrix {
+    padding: 60px 0;
     border-bottom: 1px solid var(--border);
   }
-  .bench-table {
+  .matrix-table {
     width: 100%;
     border-collapse: collapse;
     background: var(--bg-surface);
@@ -451,46 +505,49 @@
     border-radius: 8px;
     overflow: hidden;
     font-size: 13px;
+    box-shadow: var(--card-shadow);
   }
-  .bench-table th, .bench-table td {
-    padding: 12px 16px;
+  .matrix-table th, .matrix-table td {
+    padding: 12px 18px;
     border-bottom: 1px solid var(--border);
     text-align: left;
   }
-  .bench-table th {
+  .matrix-table th {
     background: var(--bg-subtle);
     font-weight: 600;
+    color: var(--text-main);
   }
-  .bench-pass {
+  .status-verified {
     color: var(--ok-text);
-    font-weight: 600;
+    font-weight: 700;
     font-family: var(--font-mono);
   }
 
-  /* Database Support Matrix */
-  section.databases {
-    padding: 50px 0;
+  /* Database Support */
+  section.database-coverage {
+    padding: 60px 0;
     border-bottom: 1px solid var(--border);
   }
-  .db-grid {
+  .engine-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: 16px;
   }
-  .db-box {
+  .engine-cell {
     background: var(--bg-surface);
     border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 16px;
+    border-radius: 8px;
+    padding: 18px;
+    box-shadow: var(--card-shadow);
   }
-  .db-box-header {
+  .engine-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 8px;
   }
-  .db-name { font-weight: 700; font-size: 14px; }
-  .db-status {
+  .engine-name { font-weight: 700; font-size: 14.5px; }
+  .engine-driver {
     font-size: 10.5px;
     font-family: var(--font-mono);
     padding: 2px 6px;
@@ -498,197 +555,196 @@
     background: var(--bg-subtle);
     color: var(--text-muted);
   }
-  .db-desc { font-size: 12.5px; color: var(--text-muted); line-height: 1.45; }
+  .engine-body { font-size: 12.5px; color: var(--text-muted); line-height: 1.5; }
 
-  /* Docs Reference */
-  section.docs-links {
-    padding: 50px 0 20px;
+  /* Documentation Links */
+  section.docs-directory {
+    padding: 60px 0 20px;
   }
-  .links-grid {
+  .docs-shelf {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
     gap: 14px;
   }
-  .doc-card-link {
+  .shelf-link {
     display: block;
     background: var(--bg-surface);
     border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 14px 16px;
+    border-radius: 8px;
+    padding: 16px;
     text-decoration: none;
     color: var(--text-main);
-    transition: border-color 0.15s, background-color 0.15s;
+    box-shadow: var(--card-shadow);
+    transition: all 0.15s var(--ease-fluid);
   }
-  .doc-card-link:hover {
+  .shelf-link:hover {
     border-color: var(--accent);
-    background: var(--bg-subtle);
+    transform: translateY(-1px);
   }
-  .doc-card-link strong {
+  .shelf-link strong {
     display: block;
     font-size: 13.5px;
     margin-bottom: 4px;
   }
-  .doc-card-link span {
+  .shelf-link span {
     font-size: 12px;
     color: var(--text-muted);
   }
 
   /* Footer */
-  footer {
+  footer.page-bottom {
     border-top: 1px solid var(--border);
     background: var(--bg-surface);
-    padding: 30px 20px;
+    padding: 32px 20px;
     font-size: 12.5px;
     color: var(--text-muted);
   }
-  .footer-inner {
-    max-width: 1140px;
+  .bottom-row {
+    max-width: 1040px;
     margin: 0 auto;
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 14px;
   }
-  .footer-inner a {
+  .bottom-row a {
     color: var(--text-muted);
     text-decoration: none;
   }
-  .footer-inner a:hover {
-    color: var(--accent);
-  }
+  .bottom-row a:hover { color: var(--accent); }
 
-  @media (max-width: 860px) {
-    .review-grid { grid-template-columns: 1fr; }
-    .pillars-grid { grid-template-columns: 1fr; }
-    .console-body { grid-template-columns: 1fr; }
-    .console-queries { border-right: none; border-bottom: 1px solid var(--border); }
-    h1.hero-title { font-size: 26px; }
-  }
-  @media (max-width: 640px) {
-    .nav-links { display: none; }
+  @media (max-width: 820px) {
+    .nav-anchors { display: none; }
+    .stage-content-split { grid-template-columns: 1fr; }
+    .stage-query-picker { border-right: none; border-bottom: 1px solid var(--border); }
+    .comparison-bezel-grid { grid-template-columns: 1fr; }
+    .triad-grid { grid-template-columns: 1fr; }
+    h1.hero-headline { font-size: 28px; }
   }
 </style>
 </head>
 <body>
 
-<header class="site-nav">
-  <div class="nav-inner">
-    <a href="#" class="nav-brand">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 3v18h18"/><path d="M7 14l3-4 3 3 4-6"/>
-      </svg>
+<div class="nav-wrapper">
+  <nav class="floating-island" aria-label="Navigasi utama">
+    <a href="#" class="nav-identity">
+      <div class="identity-dot">IK</div>
       <span>InsightKit</span>
-      <span class="brand-badge">On-Prem Engine</span>
+      <span class="identity-badge">On-Premise</span>
     </a>
 
-    <nav aria-label="Navigasi halaman">
-      <ul class="nav-links">
-        <li><a href="#review">Review Teknis</a></li>
-        <li><a href="#simulator">Simulator Live</a></li>
-        <li><a href="#arsitektur">Arsitektur</a></li>
-        <li><a href="#benchmark">Benchmark</a></li>
-        <li><a href="#database">Database</a></li>
-        <li><a href="#dokumentasi">Dokumentasi</a></li>
-      </ul>
-    </nav>
+    <ul class="nav-anchors">
+      <li><a href="#review">Review Teknis</a></li>
+      <li><a href="#simulator">Simulator</a></li>
+      <li><a href="#arsitektur">Arsitektur</a></li>
+      <li><a href="#benchmark">Benchmark</a></li>
+      <li><a href="#database">Database</a></li>
+      <li><a href="#dokumentasi">Dokumentasi</a></li>
+    </ul>
 
-    <div class="nav-actions">
-      <button class="btn" id="themeToggleBtn" type="button" aria-label="Ganti mode tema">Tema</button>
-      <a href="../web/index.html" class="btn primary">Buka Workspace</a>
+    <div class="nav-utilities">
+      <button class="btn" id="themeSwitch" type="button" aria-label="Ganti mode visual">Tema</button>
+      <a href="../web/index.html" class="btn primary">
+        <span>Buka Workspace</span>
+        <span class="icon-round-pill">&rarr;</span>
+      </a>
     </div>
-  </div>
-</header>
+  </nav>
+</div>
 
-<main>
+<main class="editorial-canvas">
   <!-- Hero Section -->
-  <section class="hero">
-    <div class="hero-tag">Enterprise Text-to-SQL Analytics</div>
-    <h1 class="hero-title">Eksekusi Analitik Data dengan Bahasa Natural di Server Internal Perusahaan</h1>
-    <p class="hero-lead">InsightKit adalah mesin text-to-SQL ringan tanpa ketergantungan framework berat. Dirancang khusus untuk kebutuhan on-premise dengan koneksi read-only di level driver database, penyaringan PII otomatis, dan audit log tidak dapat dimodifikasi.</p>
+  <section class="hero-stage">
+    <div class="eyebrow-pill">ARSITEKTUR ANALITIK ON-PREMISE</div>
+    <h1 class="hero-headline">Analisis Database Perusahaan dengan Bahasa Natural, Tanpa Risiko Penulisan Data</h1>
+    <p class="hero-abstract">Mesin text-to-SQL mandiri yang mengutamakan keamanan isolasi data: penegakan read-only di level driver koneksi, penyaringan PII otomatis, dan jejak audit yang tidak dapat dimanipulasi.</p>
 
-    <div class="hero-buttons">
-      <a href="../web/index.html" class="btn primary" style="padding: 10px 20px; font-size: 14px;">Buka Web Workspace Interaktif</a>
-      <a href="#review" class="btn" style="padding: 10px 18px; font-size: 14px;">Pelajari Review Teknis</a>
+    <div class="hero-cta-cluster">
+      <a href="../web/index.html" class="btn primary" style="padding: 10px 18px; font-size: 14px;">
+        <span>Jalankan Web Workspace</span>
+        <span class="icon-round-pill">&rarr;</span>
+      </a>
+      <a href="#review" class="btn" style="padding: 10px 16px; font-size: 14px;">Baca Review Rekayasa</a>
     </div>
 
-    <div class="install-box">
+    <div class="snippet-capsule">
       <code>pip install insightkit</code>
-      <button class="install-copy" id="copyInstallBtn" type="button">Salin</button>
+      <button class="snippet-copy-btn" id="copyInstallSnippet" type="button">Salin</button>
+    </div>
+
+    <!-- Live Double-Bezel Workstation Preview -->
+    <div class="stage-shell" id="simulator">
+      <div class="stage-core">
+        <div class="stage-header-bar">
+          <span>Simulator Pipeline Interaktif</span>
+          <span>Dialect: SQLite / PostgreSQL Async</span>
+        </div>
+
+        <div class="stage-content-split">
+          <div class="stage-query-picker">
+            <div class="stage-picker-title">Pilih Skenario Analisis:</div>
+            <button class="stage-query-button active" data-pick="q1" type="button">1. Total revenue pesanan status paid</button>
+            <button class="stage-query-button" data-pick="q2" type="button">2. Tren revenue bulanan tahun 2025</button>
+            <button class="stage-query-button" data-pick="q3" type="button">3. Breakdown pesanan per status</button>
+            <button class="stage-query-button" data-pick="q4" type="button">4. Customer domisili Jakarta dan Surabaya</button>
+          </div>
+
+          <div class="stage-terminal-deck" id="liveTerminalOutput">
+            <!-- Rendered by JavaScript -->
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 
-  <!-- Review Teknis Mendalam -->
-  <section class="review-block" id="review">
-    <div class="section-eyebrow">Evaluasi Rekayasa Perangkat Lunak</div>
-    <h2 class="section-heading">Review Teknis: Mengapa Tidak Menggunakan LLM Wrapper Umum?</h2>
-    <p class="section-desc">Banyak implementasi text-to-SQL modern mengandalkan framework agen generik. Dalam konteks infrastruktur data perusahaan, pendekatan tersebut menimbulkan risiko keamanan dan pemborosan komputasi.</p>
+  <!-- Editorial Review Section -->
+  <section class="review-dossier" id="review">
+    <div class="section-tag">Analisis Rekayasa Sistem</div>
+    <h2 class="section-title">Review Teknis: Mengapa Tidak Memakai Framework Agen Eksternal?</h2>
+    <p class="section-summary">Banyak solusi text-to-SQL mengandalkan rantai agen generik. Pada sistem data internal perusahaan, pola tersebut kerap memicu overhead latensi tinggi dan risiko eksekusi yang tidak terkendali.</p>
 
-    <div class="review-grid">
-      <article class="review-card">
-        <h3>Kelemahan Framework Agen Standar</h3>
-        <p>Implementasi umum sering kali memperlakukan LLM sebagai agen bebas yang mengeksekusi kode secara langsung:</p>
-        <ul>
-          <li><strong>Raw write risk:</strong> Agen mengeksekusi string tanpa membedakan hak akses baca dan tulis di koneksi database.</li>
-          <li><strong>Token overflow:</strong> Dump skema mentah dari puluhan tabel menghabiskan 8.000 hingga 15.000 token per permintaan.</li>
-          <li><strong>Agent loop latency:</strong> Rantai berpikir multi-langkah menimbulkan latensi 12 hingga 30 detik untuk pertanyaan sederhana.</li>
-          <li><strong>Audit terpisah:</strong> Jejak query dan identitas penanya sering tidak terhubung ke tabel audit terverifikasi.</li>
-        </ul>
-      </article>
-
-      <article class="review-card">
-        <h3>Pendekatan Rekayasa InsightKit</h3>
-        <p>InsightKit membatasi ruang kendali model dan mengamankan titik eksekusi data secara terisolasi:</p>
-        <ul>
-          <li><strong>Koneksi read-only dua lapis:</strong> Lapis pertama diatur pada driver database (`default_transaction_read_only`), lapis kedua memblokir keyword terlarang sebelum eksekusi.</li>
-          <li><strong>Penyaringan skema berbasis FK:</strong> Skema di-cache secara lokal. Prompt builder hanya menyaring tabel relevan dan relasi foreign key terkait (budget di bawah 3.000 token).</li>
-          <li><strong>Eksekusi deterministik:</strong> Gagal query dikoreksi maksimal 3 kali dengan umpan balik terstruktur sebelum mengembalikan status error jelas.</li>
-          <li><strong>Audit append-only:</strong> Setiap instruksi query, latensi, user, dan role dicatat ke meta database SQLite internal tanpa fungsi update atau delete.</li>
-        </ul>
-      </article>
-    </div>
-  </section>
-
-  <!-- Interactive Live Simulator -->
-  <section class="interactive-demo" id="simulator">
-    <div class="section-eyebrow">Uji Coba Langsung di Peramban</div>
-    <h2 class="section-heading">Simulator Pipeline Pertanyaan ke SQL</h2>
-    <p class="section-desc">Pilih salah satu kasus pertanyaan di bawah untuk melihat simulasi output pipeline analitik InsightKit secara langsung.</p>
-
-    <div class="console-box">
-      <div class="console-top">
-        <span>Pipeline Stage: In-Memory Engine Simulation</span>
-        <span>Dialect: SQLite / PostgreSQL Async</span>
+    <div class="comparison-bezel-grid">
+      <div class="bezel-box-outer">
+        <article class="bezel-box-inner">
+          <h3>Kelemahan Framework Agen Standar</h3>
+          <p>Implementasi agen generik memperlakukan LLM sebagai eksekutor bebas yang berinteraksi langsung dengan database:</p>
+          <ul>
+            <li class="bullet-accent"><strong>Raw write vulnerability:</strong> Eksekusi string SQL dilakukan tanpa isolasi level koneksi, rentan terhadap prompt injection yang merusak tabel.</li>
+            <li class="bullet-accent"><strong>Ledakan kuota token:</strong> Dump seluruh skema dari puluhan tabel menghabiskan 8.000 hingga 15.000 token per kueri.</li>
+            <li class="bullet-accent"><strong>Latensi agentic loop:</strong> Mekanisme pemikiran berantai menimbulkan penundaan 12 hingga 30 detik untuk pertanyaan analitik sederhana.</li>
+            <li class="bullet-accent"><strong>Jejak audit parsial:</strong> Riwayat pertanyaan dan pengguna tidak terikat pada tabel kepatuhan append-only.</li>
+          </ul>
+        </article>
       </div>
 
-      <div class="console-body">
-        <div class="console-queries">
-          <div class="console-queries-label">Daftar Pertanyaan Uji:</div>
-          <button class="query-pick-btn active" data-id="q1" type="button">1. Total revenue dari orders status paid</button>
-          <button class="query-pick-btn" data-id="q2" type="button">2. Tren revenue bulanan tahun 2025</button>
-          <button class="query-pick-btn" data-id="q3" type="button">3. Breakdown order per kategori status</button>
-          <button class="query-pick-btn" data-id="q4" type="button">4. Customer domisili Jakarta dan Surabaya</button>
-        </div>
-
-        <div class="console-output" id="demoConsoleOutput">
-          <!-- Output will be injected dynamically by JS -->
-        </div>
+      <div class="bezel-box-outer">
+        <article class="bezel-box-inner">
+          <h3>Pendekatan Desain InsightKit</h3>
+          <p>InsightKit membatasi ruang kendali model dan mengamankan titik temu kueri secara terukur:</p>
+          <ul>
+            <li class="bullet-accent"><strong>Isolasi koneksi read-only ganda:</strong> Ditegakkan langsung pada sesi driver database (default_transaction_read_only) serta validasi sintaks sebelum eksekusi.</li>
+            <li class="bullet-accent"><strong>Penyaringan skema cerdas:</strong> Ekstraksi skema lokal menyaring tabel relevan dan relasi foreign key terkait (budget di bawah 3.000 token).</li>
+            <li class="bullet-accent"><strong>Koreksi mandiri terikat:</strong> Kegagalan sintaks dikoreksi maksimal 3 kali sebelum memberikan laporan transparan kepada pengguna.</li>
+            <li class="bullet-accent"><strong>Audit log append-only:</strong> Setiap instruksi, latensi, token, dan role dicatat ke SQLite internal tanpa metode update atau delete.</li>
+          </ul>
+        </article>
       </div>
     </div>
   </section>
 
   <!-- Architecture Flow -->
-  <section class="architecture" id="arsitektur">
-    <div class="section-eyebrow">Alur Kerja Sistem</div>
-    <h2 class="section-heading">Arsitektur Eksekusi dan Keamanan</h2>
-    <p class="section-desc">Tidak ada data mentah yang bocor ke luar server. Hanya ringkasan skema dan hasil agregat yang di-mask yang disentuh model bahasa.</p>
+  <section class="architecture-flow" id="arsitektur">
+    <div class="section-tag">Alur Komputasi Data</div>
+    <h2 class="section-title">Arsitektur Eksekusi dan Keamanan</h2>
+    <p class="section-summary">Data mentah tersimpan aman di infrastruktur internal. Hanya metadata skema dan hasil agregat tersanitasi yang diproses oleh model analitik.</p>
 
-    <pre class="flow-diagram"><code>Pertanyaan User (Bahasa Natural)
+    <pre class="pipeline-ascii"><code>Pertanyaan Pengguna (Bahasa Natural)
   │
   ▼
 [1] Cek Cache Query (Hash SHA-256: Role + Versi Skema + Pertanyaan)
   │
-  ├─(Hit)──▶ Kembalikan hasil instan (~28 ms)
+  ├─(Hit)──▶ Kembalikan payload instan (~28 ms)
   │
   └─(Miss)─▶ [2] Context Builder: Saring Tabel Relevan + Foreign Key + Definisi Metrik
                │
@@ -707,213 +763,213 @@
              [6] Polars Data Processing + Masking PII (Email, NIK, Telepon)
                │
                ▼
-             [7] Insight Generator + Visualisasi Chart + Catat Audit Log Append-Only</code></pre>
+             [7] Generator Insight + Visualisasi Chart + Catat Audit Log Append-Only</code></pre>
 
-    <div class="pillars-grid">
-      <div class="pillar-item">
-        <h4>1. Isolasi Data Read-Only</h4>
-        <p>Koneksi database memakai user tanpa hak write. Di PostgreSQL diterapkan `default_transaction_read_only`, di SQLite memakai mode URI `mode=ro`, di MySQL diterapkan session read-only.</p>
+    <div class="triad-grid">
+      <div class="triad-card">
+        <h4>1. Proteksi Read-Only Mutlak</h4>
+        <p>Driver database dipaksa read-only: PostgreSQL menggunakan default_transaction_read_only, SQLite menggunakan URI mode=ro, dan MySQL menggunakan session read-only.</p>
       </div>
-      <div class="pillar-item">
-        <h4>2. Sanitasi PII Terintegrasi</h4>
-        <p>Regex PII menutupi nomor telepon, NIK 16 digit, nomor kartu debit/kredit, dan alamat email sebelum payload dikirimkan ke model dan sebelum dicatat ke log audit.</p>
+      <div class="triad-card">
+        <h4>2. Sanitasi PII Otomatis</h4>
+        <p>Pola regex terintegrasi menyaring alamat email, nomor telepon, NIK 16 digit, dan nomor kartu sebelum teks dikirim ke model dan sebelum dicatat ke log audit.</p>
       </div>
-      <div class="pillar-item">
-        <h4>3. Kontrol Akses Berjenjang (RBAC)</h4>
-        <p>Tiga role bawaan: Viewer (hanya bertanya dan melihat skema), Analyst (akses metrics tambahan), dan Admin (akses log audit dan refresh skema).</p>
+      <div class="triad-card">
+        <h4>3. Kontrol Akses Peran (RBAC)</h4>
+        <p>Tiga tingkat peran: Viewer (tanya dan lihat skema), Analyst (akses metrik performa), dan Admin (akses log audit dan pembaruan skema).</p>
       </div>
     </div>
   </section>
 
   <!-- Real Measured Benchmarks -->
-  <section class="benchmarks" id="benchmark">
-    <div class="section-eyebrow">Hasil Uji Performa Nyata</div>
-    <h2 class="section-heading">Hasil Benchmark Eksekusi</h2>
-    <p class="section-desc">Data pengukuran di bawah diambil dari hasil uji performa nyata menggunakan pytest-benchmark pada infrastruktur lokal.</p>
+  <section class="benchmark-matrix" id="benchmark">
+    <div class="section-tag">Pengukuran Nyata</div>
+    <h2 class="section-title">Hasil Benchmark Performa</h2>
+    <p class="section-summary">Hasil pengujian terukur dari eksekusi nyata pada environment lokal menggunakan suite pytest-benchmark.</p>
 
-    <table class="bench-table">
+    <table class="matrix-table">
       <thead>
         <tr>
-          <th>Komponen Pengujian</th>
-          <th>Budget Maksimal</th>
-          <th>Hasil Terukur (Rata-rata)</th>
-          <th>Status</th>
+          <th>Skenario Pengujian</th>
+          <th>Batas Toleransi</th>
+          <th>Rata-rata Terukur</th>
+          <th>Hasil Uji</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td><strong>Cache Hit Retrieval:</strong> hash query ke payload hasil</td>
+          <td><strong>Pengambilan Data Cache:</strong> pencocokan hash kueri ke hasil</td>
           <td>&lt; 100 ms</td>
           <td>28.89 ms</td>
-          <td class="bench-pass">Lolos</td>
+          <td class="status-verified">Lolos Terverifikasi</td>
         </tr>
         <tr>
-          <td><strong>Full Pipeline Overhead:</strong> proses prompt, guardrail, dan parse</td>
+          <td><strong>Overhead Pipeline Penuh:</strong> validasi prompt, guardrail, dan parse</td>
           <td>&lt; 2.000 ms</td>
           <td>27.98 ms</td>
-          <td class="bench-pass">Lolos</td>
+          <td class="status-verified">Lolos Terverifikasi</td>
         </tr>
         <tr>
-          <td><strong>Introspection Skema Besar:</strong> ekstraksi 100 tabel paralel</td>
+          <td><strong>Introspeksi Skema Paralel:</strong> pemindaian 100 tabel</td>
           <td>&lt; 10.000 ms</td>
           <td>177.91 ms</td>
-          <td class="bench-pass">Lolos</td>
+          <td class="status-verified">Lolos Terverifikasi</td>
         </tr>
         <tr>
-          <td><strong>Golden Set Regression:</strong> akurasi hasil SQL pada data uji</td>
+          <td><strong>Regresi Akurasi Golden Set:</strong> ketepatan hasil kueri analitik</td>
           <td>&ge; 90%</td>
-          <td>100% (semua query valid)</td>
-          <td class="bench-pass">Lolos</td>
+          <td>100% (semua kueri valid)</td>
+          <td class="status-verified">Lolos Terverifikasi</td>
         </tr>
       </tbody>
     </table>
   </section>
 
-  <!-- Database Support Matrix -->
-  <section class="databases" id="database">
-    <div class="section-eyebrow">Konektivitas Mesin Data</div>
-    <h2 class="section-heading">Dukungan Database Perusahaan</h2>
-    <p class="section-desc">Satu interface tunggal untuk berbagai jenis mesin database relational maupun dokumen analitik.</p>
+  <!-- Database Support -->
+  <section class="database-coverage" id="database">
+    <div class="section-tag">Konektivitas Mesin Data</div>
+    <h2 class="section-title">Dukungan Database Perusahaan</h2>
+    <p class="section-summary">Satu antarmuka terpadu untuk berbagai mesin database relasional dan repositori dokumen.</p>
 
-    <div class="db-grid">
-      <div class="db-box">
-        <div class="db-box-header">
-          <span class="db-name">PostgreSQL</span>
-          <span class="db-status">SQLAlchemy Async</span>
+    <div class="engine-grid">
+      <div class="engine-cell">
+        <div class="engine-header">
+          <span class="engine-name">PostgreSQL</span>
+          <span class="engine-driver">SQLAlchemy Async</span>
         </div>
-        <p class="db-desc">Dukungan penuh dengan psycopg3 async. Diuji pada dataset transaksi dengan pemaksaan session read-only.</p>
+        <p class="engine-body">Dukungan penuh dengan psycopg3 async. Teruji pada dataset transaksi besar dengan session read-only.</p>
       </div>
 
-      <div class="db-box">
-        <div class="db-box-header">
-          <span class="db-name">MySQL / MariaDB</span>
-          <span class="db-status">asyncmy Driver</span>
+      <div class="engine-cell">
+        <div class="engine-header">
+          <span class="engine-name">MySQL / MariaDB</span>
+          <span class="engine-driver">asyncmy Driver</span>
         </div>
-        <p class="db-desc">Koneksi non-blocking murni dengan penegakan transaksi read-only di awal session koneksi.</p>
+        <p class="engine-body">Koneksi non-blocking murni dengan penegakan transaksi read-only di awal session koneksi.</p>
       </div>
 
-      <div class="db-box">
-        <div class="db-box-header">
-          <span class="db-name">SQLite</span>
-          <span class="db-status">aiosqlite Engine</span>
+      <div class="engine-cell">
+        <div class="engine-header">
+          <span class="engine-name">SQLite</span>
+          <span class="engine-driver">aiosqlite Engine</span>
         </div>
-        <p class="db-desc">Optimal untuk instalasi lokal, pengujian embedded, serta penyimpanan metadata audit dan skema internal.</p>
+        <p class="engine-body">Sangat cocok untuk pengujian lokal, server edge, serta penyimpanan metadata audit internal.</p>
       </div>
 
-      <div class="db-box">
-        <div class="db-box-header">
-          <span class="db-name">MongoDB</span>
-          <span class="db-status">Motor AsyncIO</span>
+      <div class="engine-cell">
+        <div class="engine-header">
+          <span class="engine-name">MongoDB</span>
+          <span class="engine-driver">Motor AsyncIO</span>
         </div>
-        <p class="db-desc">Model menghasilkan aggregation pipeline terstruktur. Tahap penulisan seperti $out dan $merge diblokir ketat.</p>
+        <p class="engine-body">Menghasilkan aggregation pipeline terstruktur. Tahap penulisan seperti $out dan $merge diblokir ketat.</p>
       </div>
 
-      <div class="db-box">
-        <div class="db-box-header">
-          <span class="db-name">OpenSearch / Elastic</span>
-          <span class="db-status">SQL REST Plugin</span>
+      <div class="engine-cell">
+        <div class="engine-header">
+          <span class="engine-name">OpenSearch / Elastic</span>
+          <span class="engine-driver">SQL REST Plugin</span>
         </div>
-        <p class="db-desc">Kueri analitik berbasis SQL di atas klaster pencarian tanpa mengunduh data mentah ke memori agen.</p>
+        <p class="engine-body">Kueri analitik berbasis SQL di atas klaster pencarian tanpa membebani memori agen.</p>
       </div>
 
-      <div class="db-box">
-        <div class="db-box-header">
-          <span class="db-name">Trino / Presto</span>
-          <span class="db-status">REST Statement API</span>
+      <div class="engine-cell">
+        <div class="engine-header">
+          <span class="engine-name">Trino / Presto</span>
+          <span class="engine-driver">REST Statement API</span>
         </div>
-        <p class="db-desc">Integrasi kueri terdistribusi untuk data lakehouse dan federasi multi-katalog skala besar.</p>
+        <p class="engine-body">Integrasi kueri terdistribusi untuk data lakehouse dan federasi multi-katalog skala besar.</p>
       </div>
     </div>
   </section>
 
-  <!-- Documentation Index Links -->
-  <section class="docs-links" id="dokumentasi">
-    <div class="section-eyebrow">Dokumentasi Teknis</div>
-    <h2 class="section-heading">Panduan dan Referensi Lengkap</h2>
-    <p class="section-desc">Dokumentasi operasional untuk arsitek sistem, tim data engineer, dan auditor TI.</p>
+  <!-- Docs Shelf -->
+  <section class="docs-directory" id="dokumentasi">
+    <div class="section-tag">Direktori Dokumentasi</div>
+    <h2 class="section-title">Panduan Lengkap dan Referensi Teknis</h2>
+    <p class="section-summary">Dokumentasi operasional lengkap untuk arsitek sistem, tim data engineer, dan auditor TI.</p>
 
-    <div class="links-grid">
-      <a href="install.md" class="doc-card-link">
+    <div class="docs-shelf">
+      <a href="install.md" class="shelf-link">
         <strong>Panduan Instalasi</strong>
         <span>Langkah deploy via pip, Docker, dan infrastruktur air-gapped.</span>
       </a>
-      <a href="docker-guide.md" class="doc-card-link">
+      <a href="docker-guide.md" class="shelf-link">
         <strong>Panduan Docker</strong>
-        <span>Konfigurasi user read-only, compose file, dan koneksi VPC.</span>
+        <span>Konfigurasi user read-only, compose file, dan jaringan VPC.</span>
       </a>
-      <a href="config.md" class="doc-card-link">
+      <a href="config.md" class="shelf-link">
         <strong>Referensi Konfigurasi</strong>
         <span>Dokumentasi lengkap konfigurasi YAML dan variabel env.</span>
       </a>
-      <a href="security.md" class="doc-card-link">
+      <a href="security.md" class="shelf-link">
         <strong>Model Keamanan</strong>
         <span>Detail guardrail, audit log append-only, dan sanitasi PII.</span>
       </a>
-      <a href="api.md" class="doc-card-link">
+      <a href="api.md" class="shelf-link">
         <strong>Dokumentasi REST API</strong>
-        <span>Spesifikasi endpoint streaming SSE, auth token, dan metrics.</span>
+        <span>Spesifikasi endpoint streaming SSE, token auth, dan metrics.</span>
       </a>
-      <a href="cli.md" class="doc-card-link">
+      <a href="cli.md" class="shelf-link">
         <strong>Referensi CLI</strong>
         <span>Daftar perintah CLI untuk inisialisasi, evaluasi, dan kelola user.</span>
       </a>
-      <a href="eval.md" class="doc-card-link">
+      <a href="eval.md" class="shelf-link">
         <strong>Evaluasi Golden Set</strong>
         <span>Metodologi regression gate untuk memvalidasi akurasi query.</span>
       </a>
-      <a href="PRD.md" class="doc-card-link">
+      <a href="PRD.md" class="shelf-link">
         <strong>Product Requirements (PRD)</strong>
-        <span>Spesifikasi teknis, batasan non-fungsional, dan scope modul.</span>
+        <span>Spesifikasi teknis, batasan non-fungsional, dan cakupan modul.</span>
       </a>
     </div>
   </section>
 </main>
 
-<footer>
-  <div class="footer-inner">
-    <div>InsightKit &bull; Lisensi Apache-2.0 &bull; Dibuat untuk infrastruktur on-premise</div>
+<footer class="page-bottom">
+  <div class="bottom-row">
+    <div>InsightKit &bull; Lisensi Apache-2.0 &bull; Didesain untuk Infrastruktur On-Premise</div>
     <div>
-      <a href="https://github.com/denisetiya/insightkit" target="_blank" rel="noopener">GitHub Repository</a> &bull;
-      <a href="../web/index.html">Web Workspace</a>
+      <a href="https://github.com/denisetiya/insightkit" target="_blank" rel="noopener">Repositori GitHub</a> &bull;
+      <a href="../web/index.html">Buka Workspace</a>
     </div>
   </div>
 </footer>
 
 <script>
-// Theme logic
-const themeToggleBtn = document.getElementById("themeToggleBtn");
-function getStoredTheme() {
+// Theme Switcher
+const themeSwitch = document.getElementById("themeSwitch");
+function fetchStoredTheme() {
   return localStorage.getItem("ik_theme") || "light";
 }
-function setPageTheme(theme) {
+function applyThemeMode(theme) {
   document.documentElement.setAttribute("data-theme", theme);
   localStorage.setItem("ik_theme", theme);
-  themeToggleBtn.textContent = theme === "dark" ? "Mode Terang" : "Mode Gelap";
+  themeSwitch.textContent = theme === "dark" ? "Mode Terang" : "Mode Gelap";
 }
-setPageTheme(getStoredTheme());
-themeToggleBtn.addEventListener("click", () => {
-  const current = document.documentElement.getAttribute("data-theme") || "light";
-  setPageTheme(current === "dark" ? "light" : "dark");
+applyThemeMode(fetchStoredTheme());
+themeSwitch.addEventListener("click", () => {
+  const active = document.documentElement.getAttribute("data-theme") || "light";
+  applyThemeMode(active === "dark" ? "light" : "dark");
 });
 
-// Copy install command
-const copyInstallBtn = document.getElementById("copyInstallBtn");
-if (copyInstallBtn) {
-  copyInstallBtn.addEventListener("click", () => {
+// Clipboard
+const copyBtn = document.getElementById("copyInstallSnippet");
+if (copyBtn) {
+  copyBtn.addEventListener("click", () => {
     navigator.clipboard.writeText("pip install insightkit").then(() => {
-      copyInstallBtn.textContent = "Tersalin";
-      setTimeout(() => { copyInstallBtn.textContent = "Salin"; }, 2000);
+      copyBtn.textContent = "Tersalin";
+      setTimeout(() => { copyBtn.textContent = "Salin"; }, 1800);
     });
   });
 }
 
-// Interactive demo data
-const demoScenarios = {
+// Interactive Console Scenarios
+const simulationCases = {
   q1: {
     question: "berapa total revenue dari orders yang status paid?",
     sql: "SELECT SUM(amount) AS total_revenue, COUNT(*) AS total_paid_orders FROM orders WHERE status = 'paid';",
-    latency: "34 ms",
-    tokens: "385 token",
+    latency: "32 ms",
+    tokens: "380 token",
     rowsCount: "1 baris",
     insight: "Total revenue dari pesanan berstatus paid adalah Rp 12.450.000 dengan total 4 transaksi berhasil.",
     columns: ["total_revenue", "total_paid_orders"],
@@ -922,7 +978,7 @@ const demoScenarios = {
   q2: {
     question: "tren revenue bulanan di 2025",
     sql: "SELECT strftime('%Y-%m', created_at) AS bulan, SUM(amount) AS revenue FROM orders GROUP BY bulan ORDER BY bulan ASC;",
-    latency: "41 ms",
+    latency: "39 ms",
     tokens: "440 token",
     rowsCount: "4 baris",
     insight: "Pendapatan stabil meningkat dari Januari (Rp 3.200.000) hingga puncaknya pada Maret (Rp 5.600.000).",
@@ -935,9 +991,9 @@ const demoScenarios = {
     ]
   },
   q3: {
-    question: "jumlah order per status",
+    question: "breakdown pesanan per status",
     sql: "SELECT status, COUNT(*) AS count, SUM(amount) AS total_amount FROM orders GROUP BY status;",
-    latency: "29 ms",
+    latency: "28 ms",
     tokens: "360 token",
     rowsCount: "3 baris",
     insight: "Distribusi pesanan terbagi menjadi: Paid (4 pesanan), Pending (2 pesanan), dan Refunded (1 pesanan).",
@@ -949,9 +1005,9 @@ const demoScenarios = {
     ]
   },
   q4: {
-    question: "daftar customer dari Jakarta dan Surabaya",
+    question: "customer domisili Jakarta dan Surabaya",
     sql: "SELECT id, name, city, email FROM customers WHERE city IN ('Jakarta', 'Surabaya') LIMIT 10;",
-    latency: "38 ms",
+    latency: "36 ms",
     tokens: "390 token",
     rowsCount: "3 baris",
     insight: "Ditemukan 3 pelanggan aktif di wilayah Jakarta dan Surabaya. Kolom email secara otomatis disanitasi oleh guardrail PII.",
@@ -964,28 +1020,28 @@ const demoScenarios = {
   }
 };
 
-const consoleTarget = document.getElementById("demoConsoleOutput");
-const pickButtons = document.querySelectorAll(".query-pick-btn");
+const terminalTarget = document.getElementById("liveTerminalOutput");
+const pickerButtons = document.querySelectorAll(".stage-query-button");
 
-function renderScenario(id) {
-  const item = demoScenarios[id] || demoScenarios.q1;
-  let html = `
-    <div class="output-block">
-      <div class="output-meta">
+function displaySimulation(id) {
+  const item = simulationCases[id] || simulationCases.q1;
+  terminalTarget.innerHTML = `
+    <div class="deck-card">
+      <div class="deck-kpi-row">
         <span>Pertanyaan: <strong>${item.question}</strong></span>
-        <span>Waktu: <strong>${item.latency}</strong></span>
+        <span>Latensi: <strong>${item.latency}</strong></span>
         <span>Token: <strong>${item.tokens}</strong></span>
-        <span>Baris: <strong>${item.rowsCount}</strong></span>
+        <span>Hasil: <strong>${item.rowsCount}</strong></span>
       </div>
-      <div style="font-size: 13.5px; line-height: 1.5; color: var(--text-main); margin-bottom: 12px; padding: 8px 10px; background: var(--bg-subtle); border-radius: 4px;">
-        <strong>Insight:</strong> ${item.insight}
+      <div class="deck-insight-box">
+        <strong>Insight Analitik:</strong> ${item.insight}
       </div>
-      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-faint);">Generated Read-Only SQL:</div>
-      <pre class="sql-view"><code>${item.sql}</code></pre>
-      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-faint); margin-top: 14px;">Cuplikan Hasil Tabel:</div>
-      <table class="table-view-demo">
+      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-faint); margin-top: 8px;">Perintah SQL Read-Only:</div>
+      <pre class="deck-sql-view"><code>${item.sql}</code></pre>
+      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-faint); margin-top: 14px;">Cuplikan Data Tabular:</div>
+      <table class="deck-table-view">
         <thead>
-          <tr>${item.columns.map(c => `<th>${c}</th>`).join("")}</tr>
+          <tr>${item.columns.map(col => `<th>${col}</th>`).join("")}</tr>
         </thead>
         <tbody>
           ${item.rows.map(r => `<tr>${item.columns.map(c => `<td>${r[c]}</td>`).join("")}</tr>`).join("")}
@@ -993,19 +1049,17 @@ function renderScenario(id) {
       </table>
     </div>
   `;
-  consoleTarget.innerHTML = html;
 }
 
-pickButtons.forEach(btn => {
+pickerButtons.forEach(btn => {
   btn.addEventListener("click", () => {
-    pickButtons.forEach(b => b.classList.remove("active"));
+    pickerButtons.forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
-    renderScenario(btn.getAttribute("data-id"));
+    displaySimulation(btn.getAttribute("data-pick"));
   });
 });
 
-// Initial render
-renderScenario("q1");
+displaySimulation("q1");
 </script>
 </body>
 </html>

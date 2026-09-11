@@ -3,10 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>InsightKit: Workspace Tanya Data</title>
+<title>InsightKit: Workspace Analitik Text-to-SQL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg-page: #f8fafc;
+    --bg-app: #f8fafc;
     --bg-surface: #ffffff;
     --bg-subtle: #f1f5f9;
     --border: #e2e8f0;
@@ -14,9 +17,9 @@
     --text-main: #0f172a;
     --text-muted: #475569;
     --text-faint: #64748b;
-    --accent: #0369a1;
-    --accent-hover: #0284c7;
-    --accent-focus: rgba(3, 105, 161, 0.2);
+    --accent: #0284c7;
+    --accent-hover: #0369a1;
+    --accent-focus: rgba(2, 132, 199, 0.2);
     --badge-bg: #e0f2fe;
     --badge-text: #0369a1;
     --ok-bg: #ecfdf5;
@@ -25,15 +28,16 @@
     --warn-text: #b45309;
     --err-bg: #fef2f2;
     --err-text: #b91c1c;
-    --code-bg: #0f172a;
+    --code-bg: #0b0f19;
     --code-text: #f8fafc;
-    --card-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
-    --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --card-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 4px 6px -1px rgba(15, 23, 42, 0.02);
+    --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, monospace;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   [data-theme="dark"] {
-    --bg-page: #090d16;
+    --bg-app: #080c14;
     --bg-surface: #0f172a;
     --bg-subtle: #1e293b;
     --border: #1e293b;
@@ -54,90 +58,97 @@
     --err-text: #fca5a5;
     --code-bg: #030712;
     --code-text: #f8fafc;
-    --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: var(--font-sans);
-    background: var(--bg-page);
+    background: var(--bg-app);
     color: var(--text-main);
     height: 100vh;
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    -webkit-font-smoothing: antialiased;
   }
 
-  header {
+  /* Header Bar */
+  header.app-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    padding: 10px 16px;
+    gap: 16px;
+    padding: 10px 20px;
     background: var(--bg-surface);
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
+    z-index: 20;
   }
 
-  .brand {
+  .brand-group {
     display: flex;
     align-items: center;
-    gap: 10px;
-    text-decoration: none;
-    color: inherit;
+    gap: 12px;
   }
-  .brand-icon {
-    width: 28px;
-    height: 28px;
+  .brand-mark {
+    width: 32px;
+    height: 32px;
     background: var(--accent);
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #fff;
-    flex-shrink: 0;
+    color: #ffffff;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    font-size: 15px;
+    box-shadow: 0 2px 4px rgba(2, 132, 199, 0.25);
   }
   .brand-title {
     font-size: 15px;
     font-weight: 700;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
   }
-  .brand-ver {
+  .brand-meta {
     font-size: 11px;
-    font-family: var(--font-mono);
     color: var(--text-faint);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tag-mono {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
     background: var(--bg-subtle);
-    padding: 2px 6px;
+    padding: 1px 6px;
     border-radius: 4px;
-    margin-left: 4px;
+    border: 1px solid var(--border);
   }
 
-  .header-actions {
+  .header-controls {
     display: flex;
     align-items: center;
     gap: 8px;
   }
 
-  .status-pill {
+  .status-badge {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 10px;
+    padding: 5px 10px;
     border-radius: 6px;
-    font-size: 12px;
+    font-size: 11.5px;
     font-family: var(--font-mono);
     background: var(--bg-subtle);
     color: var(--text-muted);
     border: 1px solid var(--border);
   }
-  .status-dot {
-    width: 7px;
-    height: 7px;
+  .status-indicator {
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
-    background: var(--text-faint);
   }
-  .status-dot.active { background: #10b981; }
-  .status-dot.offline { background: var(--warn-text); }
+  .status-indicator.live { background: #10b981; }
+  .status-indicator.demo { background: #f59e0b; }
 
   .btn {
     border: 1px solid var(--border);
@@ -145,18 +156,21 @@
     color: var(--text-main);
     border-radius: 6px;
     padding: 6px 12px;
-    font-size: 13px;
+    font-size: 12.5px;
     font-weight: 600;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    min-height: 36px;
-    transition: background-color 0.15s, border-color 0.15s;
+    min-height: 34px;
+    transition: background-color 0.15s var(--ease-out), border-color 0.15s var(--ease-out), transform 0.1s var(--ease-out);
   }
   .btn:hover:not(:disabled) {
     background: var(--bg-subtle);
     border-color: var(--border-strong);
+  }
+  .btn:active:not(:disabled) {
+    transform: scale(0.98);
   }
   .btn:focus-visible {
     outline: 2px solid var(--accent);
@@ -176,7 +190,48 @@
     border-color: var(--accent-hover);
   }
 
-  .mobile-tabs {
+  /* Preset Question Bar */
+  .preset-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    flex-shrink: 0;
+    white-space: nowrap;
+    scrollbar-width: thin;
+  }
+  .preset-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-faint);
+    margin-right: 4px;
+  }
+  .preset-chip {
+    border: 1px solid var(--border);
+    background: var(--bg-subtle);
+    color: var(--text-main);
+    border-radius: 6px;
+    padding: 5px 11px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s var(--ease-out);
+  }
+  .preset-chip:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: var(--bg-surface);
+    color: var(--accent);
+  }
+  .preset-chip:focus-visible {
+    outline: 2px solid var(--accent);
+  }
+
+  /* Mobile Tabs */
+  .mobile-nav-tabs {
     display: none;
     background: var(--bg-surface);
     border-bottom: 1px solid var(--border);
@@ -193,7 +248,7 @@
     font-weight: 600;
     border-radius: 6px;
     cursor: pointer;
-    min-height: 44px;
+    min-height: 40px;
     text-align: center;
   }
   .mobile-tab-btn.active {
@@ -201,144 +256,115 @@
     color: var(--text-main);
   }
 
-  .preset-bar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    background: var(--bg-surface);
-    border-bottom: 1px solid var(--border);
-    overflow-x: auto;
-    flex-shrink: 0;
-    white-space: nowrap;
-  }
-  .preset-label {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-faint);
-  }
-  .preset-chip {
-    border: 1px solid var(--border);
-    background: var(--bg-subtle);
-    color: var(--text-main);
-    border-radius: 6px;
-    padding: 5px 10px;
-    font-size: 12px;
-    cursor: pointer;
-    transition: border-color 0.15s, background-color 0.15s;
-    min-height: 32px;
-  }
-  .preset-chip:hover:not(:disabled) {
-    border-color: var(--accent);
-    background: var(--bg-surface);
-  }
-  .preset-chip:focus-visible {
-    outline: 2px solid var(--accent);
-  }
-
-  .workspace {
+  /* Main Workspace Split */
+  .workspace-layout {
     flex: 1;
     display: flex;
     min-height: 0;
   }
 
-  .pane-query {
-    width: 44%;
+  /* Left Pane: Query / Chat Stream */
+  .pane-chat {
+    width: 42%;
     min-width: 360px;
-    max-width: 560px;
+    max-width: 540px;
     border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
     background: var(--bg-surface);
   }
 
-  .history-list {
+  .stream-container {
     flex: 1;
     overflow-y: auto;
-    padding: 14px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
   }
 
-  .empty-history {
+  .empty-stream-canvas {
     margin: auto;
     text-align: center;
     color: var(--text-faint);
-    max-width: 280px;
-    padding: 24px 12px;
+    max-width: 300px;
+    padding: 30px 10px;
   }
-  .empty-history-title {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-muted);
-    margin-bottom: 4px;
+  .empty-canvas-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 6px;
   }
-  .empty-history-sub {
+  .empty-canvas-desc {
     font-size: 12px;
-    line-height: 1.4;
+    line-height: 1.5;
+    color: var(--text-muted);
   }
 
-  .chat-row {
+  .message-unit {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
   }
-  .user-bubble {
+  .user-speech-bubble {
     align-self: flex-end;
     background: var(--accent);
     color: #ffffff;
-    padding: 8px 12px;
-    border-radius: 8px 8px 2px 8px;
-    font-size: 13px;
-    line-height: 1.4;
-    max-width: 90%;
-    word-break: break-word;
-  }
-  .ai-card {
-    align-self: flex-start;
-    background: var(--bg-subtle);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 12px;
+    padding: 9px 13px;
+    border-radius: 10px 10px 2px 10px;
     font-size: 13px;
     line-height: 1.45;
+    max-width: 88%;
+    word-break: break-word;
+    box-shadow: 0 1px 2px rgba(2, 132, 199, 0.15);
+  }
+
+  /* Double-Bezel Card Pattern for AI Response */
+  .ai-bezel-outer {
+    align-self: flex-start;
     width: 100%;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 3px;
     cursor: pointer;
-    transition: border-color 0.15s, background-color 0.15s;
+    transition: border-color 0.15s var(--ease-out), box-shadow 0.15s var(--ease-out);
   }
-  .ai-card:hover {
+  .ai-bezel-outer:hover {
     border-color: var(--accent);
   }
-  .ai-card.active {
+  .ai-bezel-outer.selected {
     border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+  .ai-bezel-inner {
     background: var(--bg-surface);
+    border-radius: 7px;
+    padding: 11px 13px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
   }
-  .ai-card:focus-visible {
-    outline: 2px solid var(--accent);
-  }
-  .ai-summary {
+  .ai-preview-text {
+    font-size: 13px;
     color: var(--text-main);
+    line-height: 1.5;
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-  .ai-footer {
+  .ai-card-telemetry {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
     margin-top: 8px;
-    padding-top: 6px;
+    padding-top: 8px;
     border-top: 1px solid var(--border);
     font-size: 11px;
     font-family: var(--font-mono);
     color: var(--text-faint);
   }
-  .ai-status {
+  .telemetry-tag {
     display: inline-flex;
     align-items: center;
     padding: 1px 6px;
@@ -346,201 +372,255 @@
     font-size: 10px;
     font-weight: 700;
   }
-  .ai-status.ok { background: var(--ok-bg); color: var(--ok-text); }
-  .ai-status.no_data { background: var(--warn-bg); color: var(--warn-text); }
-  .ai-status.error { background: var(--err-bg); color: var(--err-text); }
-  .ai-status.running { background: var(--badge-bg); color: var(--badge-text); }
+  .telemetry-tag.ok { background: var(--ok-bg); color: var(--ok-text); }
+  .telemetry-tag.running { background: var(--badge-bg); color: var(--badge-text); }
+  .telemetry-tag.error { background: var(--err-bg); color: var(--err-text); }
 
-  .input-container {
-    padding: 12px;
+  /* Input Deck */
+  .composer-dock {
+    padding: 14px 16px;
     border-top: 1px solid var(--border);
     background: var(--bg-surface);
   }
-  .input-wrapper {
+  .composer-shell {
     display: flex;
     gap: 8px;
     align-items: flex-end;
-  }
-  .query-textarea {
-    flex: 1;
-    resize: none;
+    background: var(--bg-app);
     border: 1px solid var(--border);
-    background: var(--bg-surface);
-    color: var(--text-main);
-    border-radius: 6px;
-    padding: 9px 12px;
-    font-family: inherit;
-    font-size: 13px;
-    line-height: 1.4;
-    min-height: 40px;
-    max-height: 140px;
+    border-radius: 8px;
+    padding: 4px 6px;
+    transition: border-color 0.15s var(--ease-out), box-shadow 0.15s var(--ease-out);
   }
-  .query-textarea:focus {
-    outline: none;
+  .composer-shell:focus-within {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px var(--accent-focus);
+    background: var(--bg-surface);
   }
-  .query-textarea:disabled {
-    background: var(--bg-subtle);
+  .composer-textarea {
+    flex: 1;
+    resize: none;
+    border: none;
+    background: transparent;
+    color: var(--text-main);
+    padding: 6px 8px;
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1.45;
+    min-height: 38px;
+    max-height: 120px;
+    outline: none;
+  }
+  .composer-textarea:disabled {
     color: var(--text-faint);
+    cursor: not-allowed;
   }
-  .input-hint {
-    margin-top: 6px;
+  .composer-meta-row {
+    margin-top: 8px;
     display: flex;
     justify-content: space-between;
-    font-size: 11px;
+    align-items: center;
+    font-size: 11.5px;
     color: var(--text-faint);
   }
+  .clear-history-action {
+    background: transparent;
+    border: none;
+    color: var(--text-faint);
+    font-size: 11px;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+  .clear-history-action:hover {
+    color: var(--text-main);
+  }
 
+  /* Right Pane: Inspector / Sheets */
   .pane-inspector {
     flex: 1;
     overflow-y: auto;
-    padding: 20px;
-    background: var(--bg-page);
+    padding: 24px;
+    background: var(--bg-app);
   }
-  .inspector-empty {
-    margin-top: 12vh;
+
+  .inspector-blank-slate {
+    margin-top: 14vh;
     text-align: center;
     color: var(--text-muted);
-    max-width: 440px;
+    max-width: 420px;
     margin-left: auto;
     margin-right: auto;
   }
-  .inspector-empty-icon {
-    width: 48px;
-    height: 48px;
+  .blank-slate-icon {
+    width: 44px;
+    height: 44px;
     color: var(--text-faint);
     margin: 0 auto 12px;
   }
-  .inspector-empty h2 {
+  .blank-slate-title {
     font-size: 16px;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--text-main);
     margin-bottom: 6px;
   }
-  .inspector-empty p {
+  .blank-slate-desc {
     font-size: 13px;
-    line-height: 1.5;
+    line-height: 1.55;
     color: var(--text-muted);
   }
 
-  .result-sheet {
-    max-width: 980px;
+  /* Double-Bezel Sheet Container */
+  .sheet-outer {
+    max-width: 1040px;
     margin: 0 auto;
-    background: var(--bg-surface);
+    background: var(--bg-subtle);
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: 12px;
+    padding: 4px;
     box-shadow: var(--card-shadow);
-    padding: 20px;
+  }
+  .sheet-inner {
+    background: var(--bg-surface);
+    border-radius: 9px;
+    padding: 24px;
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 22px;
   }
 
-  .result-header {
+  .sheet-header {
     border-bottom: 1px solid var(--border);
-    padding-bottom: 12px;
+    padding-bottom: 16px;
   }
-  .result-title {
-    font-size: 17px;
-    font-weight: 700;
+  .sheet-query-title {
+    font-size: 18px;
+    font-weight: 800;
     line-height: 1.35;
-    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+    margin-bottom: 10px;
   }
-  .stats-bar {
+  .sheet-kpi-bar {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 12px;
-    font-size: 11.5px;
-    color: var(--text-muted);
+    gap: 16px;
+    font-size: 12px;
     font-family: var(--font-mono);
+    color: var(--text-muted);
   }
-  .stats-item strong {
+  .kpi-chip strong {
     color: var(--text-main);
   }
 
-  .block-label {
+  .block-heading {
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
     color: var(--text-faint);
-    margin-bottom: 6px;
+    margin-bottom: 8px;
   }
 
-  .insight-box {
+  /* Segmented inspector views */
+  .inspector-tabs {
+    display: flex;
+    gap: 6px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+  }
+  .tab-selector {
+    padding: 5px 12px;
+    font-size: 12.5px;
+    font-weight: 600;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-muted);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s var(--ease-out);
+  }
+  .tab-selector:hover {
+    color: var(--text-main);
+    background: var(--bg-subtle);
+  }
+  .tab-selector.active {
+    background: var(--bg-subtle);
+    border-color: var(--border);
+    color: var(--accent);
+  }
+
+  .insight-callout {
     background: var(--bg-subtle);
     border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 12px 14px;
+    border-radius: 8px;
+    padding: 14px 16px;
     font-size: 14px;
-    line-height: 1.55;
+    line-height: 1.6;
     white-space: pre-wrap;
     word-break: break-word;
   }
 
-  .chart-wrapper {
+  .chart-canvas-box {
     border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 10px;
+    border-radius: 8px;
+    padding: 12px;
     background: var(--bg-surface);
     min-height: 380px;
   }
 
-  .table-box {
+  .table-deck {
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: 8px;
     overflow: hidden;
     background: var(--bg-surface);
   }
-  .table-scroll {
-    max-height: 300px;
+  .table-scroll-wrap {
+    max-height: 320px;
     overflow: auto;
   }
-  table.data-grid {
+  table.data-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 12.5px;
     font-family: var(--font-mono);
   }
-  table.data-grid th, table.data-grid td {
+  table.data-table th, table.data-table td {
     border-bottom: 1px solid var(--border);
     border-right: 1px solid var(--border);
-    padding: 6px 10px;
+    padding: 7px 12px;
     text-align: left;
     white-space: nowrap;
   }
-  table.data-grid th {
+  table.data-table th {
     background: var(--bg-subtle);
     font-weight: 600;
     color: var(--text-main);
     position: sticky;
     top: 0;
-    z-index: 1;
+    z-index: 2;
   }
-  table.data-grid tr:hover td {
+  table.data-table tr:hover td {
     background: var(--bg-subtle);
   }
-  .table-actions {
+  .table-foot-deck {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 6px 10px;
+    padding: 8px 12px;
     border-top: 1px solid var(--border);
-    font-size: 11px;
+    font-size: 11.5px;
     color: var(--text-faint);
     background: var(--bg-subtle);
   }
 
-  .sql-accordion {
+  .sql-drawer {
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: 8px;
     overflow: hidden;
   }
-  .sql-accordion summary {
-    padding: 8px 12px;
-    font-size: 12px;
+  .sql-drawer summary {
+    padding: 9px 14px;
+    font-size: 12.5px;
     font-weight: 600;
     cursor: pointer;
     background: var(--bg-subtle);
@@ -549,91 +629,92 @@
     align-items: center;
     justify-content: space-between;
   }
-  .sql-accordion summary:focus-visible {
+  .sql-drawer summary:focus-visible {
     outline: 2px solid var(--accent);
   }
-  .sql-code-box {
+  .sql-monobox {
     background: var(--code-bg);
     color: var(--code-text);
-    padding: 12px;
+    padding: 14px;
     font-family: var(--font-mono);
     font-size: 12px;
-    line-height: 1.45;
+    line-height: 1.5;
     overflow-x: auto;
     white-space: pre-wrap;
     word-break: break-word;
   }
 
-  /* Modal */
-  .modal-scrim {
+  /* Modal Dialog */
+  .dialog-scrim {
     position: fixed;
     inset: 0;
-    background: rgba(15, 23, 42, 0.5);
+    background: rgba(8, 12, 20, 0.6);
+    backdrop-filter: blur(4px);
     display: none;
     place-items: center;
-    z-index: 99;
+    z-index: 100;
     padding: 16px;
   }
-  .modal-scrim.open { display: grid; }
-  .modal-body {
+  .dialog-scrim.open { display: grid; }
+  .dialog-card {
     background: var(--bg-surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
     width: 100%;
-    max-width: 440px;
-    padding: 20px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    max-width: 460px;
+    padding: 22px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25);
   }
-  .modal-header {
+  .dialog-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
   }
-  .modal-title { font-size: 15px; font-weight: 700; }
-  .modal-desc { font-size: 12px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.4; }
-  .form-group { margin-bottom: 12px; }
-  .form-group label {
+  .dialog-title { font-size: 16px; font-weight: 700; }
+  .dialog-subtext { font-size: 12.5px; color: var(--text-muted); margin-bottom: 18px; line-height: 1.45; }
+  .dialog-field { margin-bottom: 14px; }
+  .dialog-field label {
     display: block;
     font-size: 12px;
     font-weight: 600;
     color: var(--text-main);
-    margin-bottom: 4px;
+    margin-bottom: 5px;
   }
-  .form-input {
+  .dialog-input {
     width: 100%;
     border: 1px solid var(--border);
     background: var(--bg-surface);
     color: var(--text-main);
     border-radius: 6px;
-    padding: 8px 10px;
+    padding: 8px 11px;
     font-family: inherit;
     font-size: 13px;
   }
-  .form-input:focus {
+  .dialog-input:focus {
     outline: none;
     border-color: var(--accent);
     box-shadow: 0 0 0 2px var(--accent-focus);
   }
-  .conn-status-row {
+  .dialog-telemetry {
     font-size: 12px;
     margin-top: 10px;
     min-height: 20px;
     font-family: var(--font-mono);
   }
-  .modal-footer {
+  .dialog-footer {
     display: flex;
     justify-content: flex-end;
     gap: 8px;
-    margin-top: 16px;
-    padding-top: 12px;
+    margin-top: 18px;
+    padding-top: 14px;
     border-top: 1px solid var(--border);
   }
 
-  @media (max-width: 768px) {
-    .mobile-tabs { display: flex; }
-    .workspace { flex-direction: column; }
-    .pane-query {
+  @media (max-width: 820px) {
+    .mobile-nav-tabs { display: flex; }
+    .workspace-layout { flex-direction: column; }
+    .pane-chat {
       width: 100%;
       min-width: 0;
       max-width: none;
@@ -646,123 +727,124 @@
       flex: 1;
       padding: 14px;
     }
-    .workspace[data-mobile-view="inspector"] .pane-query { display: none; }
-    .workspace[data-mobile-view="inspector"] .pane-inspector { display: block; }
+    .workspace-layout[data-mobile-pane="inspector"] .pane-chat { display: none; }
+    .workspace-layout[data-mobile-pane="inspector"] .pane-inspector { display: block; }
   }
 </style>
 </head>
 <body>
 
-<header>
-  <a href="#" class="brand" aria-label="InsightKit Workspace">
-    <div class="brand-icon">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 3v18h18"/><path d="M7 14l3-4 3 3 4-6"/>
-      </svg>
-    </div>
+<header class="app-header">
+  <div class="brand-group">
+    <div class="brand-mark" aria-hidden="true">IK</div>
     <div>
-      <span class="brand-title">InsightKit</span>
-      <span class="brand-ver">v0.1.0</span>
+      <div class="brand-title">InsightKit Workspace</div>
+      <div class="brand-meta">
+        <span>Engine Text-to-SQL</span>
+        <span class="tag-mono">v0.1.0</span>
+      </div>
     </div>
-  </a>
+  </div>
 
-  <div class="header-actions">
-    <div class="status-pill" id="connPill" title="Status koneksi engine">
-      <span class="status-dot" id="connDot"></span>
-      <span id="connLabel">Demo Mode</span>
+  <div class="header-controls">
+    <div class="status-badge" id="statusBadge" title="Status konektivitas engine">
+      <span class="status-indicator demo" id="statusIndicator"></span>
+      <span id="statusModeLabel">Sandbox Demo</span>
     </div>
-    <button class="btn" id="themeBtn" aria-label="Ganti mode warna">
+
+    <button class="btn" id="themeToggleBtn" type="button" aria-label="Ganti mode visual">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-      <span id="themeLabel">Tema</span>
+      <span id="themeToggleText">Mode</span>
     </button>
-    <button class="btn" id="openSettingsBtn" aria-label="Buka pengaturan koneksi">
+
+    <button class="btn" id="openConfigBtn" type="button" aria-label="Buka konfigurasi server">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       <span>Koneksi</span>
     </button>
   </div>
 </header>
 
-<nav class="mobile-tabs" aria-label="Navigasi tampilan mobile">
-  <button class="mobile-tab-btn active" id="tabQueryBtn">Pertanyaan</button>
-  <button class="mobile-tab-btn" id="tabInspectorBtn">Hasil & Analisis</button>
+<nav class="mobile-nav-tabs" aria-label="Navigasi ponsel">
+  <button class="mobile-tab-btn active" id="mobileQueryTab">Pertanyaan & Input</button>
+  <button class="mobile-tab-btn" id="mobileInspectTab">Hasil & Analisis</button>
 </nav>
 
-<div class="preset-bar" aria-label="Pertanyaan contoh">
-  <span class="preset-label">Contoh:</span>
+<nav class="preset-bar" aria-label="Pertanyaan contoh terverifikasi">
+  <span class="preset-label">Query Cepat:</span>
   <button class="preset-chip" type="button">berapa total revenue dari orders status paid?</button>
-  <button class="preset-chip" type="button">tren revenue bulanan di 2025</button>
-  <button class="preset-chip" type="button">jumlah order per status</button>
-  <button class="preset-chip" type="button">daftar customer dari Jakarta dan Surabaya</button>
-</div>
+  <button class="preset-chip" type="button">tren revenue bulanan tahun 2025</button>
+  <button class="preset-chip" type="button">breakdown order per kategori status</button>
+  <button class="preset-chip" type="button">customer domisili Jakarta dan Surabaya</button>
+</nav>
 
-<main class="workspace" id="workspace" data-mobile-view="query">
-  <!-- Pane Kiri: Percakapan & Input -->
-  <section class="pane-query" aria-label="Panel pertanyaan">
-    <div class="history-list" id="historyList">
-      <div class="empty-history" id="emptyHistory">
-        <div class="empty-history-title">Mulai Analisis Data</div>
-        <div class="empty-history-sub">Ketik pertanyaan analitik dengan bahasa natural atau pilih salah satu contoh di atas.</div>
+<main class="workspace-layout" id="workspaceRoot" data-mobile-pane="query">
+  <!-- Left Pane -->
+  <section class="pane-chat" aria-label="Panel input dan riwayat">
+    <div class="stream-container" id="streamContainer">
+      <div class="empty-stream-canvas" id="emptyCanvas">
+        <div class="empty-canvas-title">Eksplorasi Data Perusahaan</div>
+        <div class="empty-canvas-desc">Ajukan pertanyaan bisnis dengan bahasa natural. Pipeline akan memvalidasi skema, menghasilkan SQL read-only, dan menyajikan insight kuantitatif.</div>
       </div>
     </div>
 
-    <div class="input-container">
-      <div class="input-wrapper">
-        <textarea id="queryInput" class="query-textarea" rows="1" placeholder="Ketik pertanyaan analitik... (Enter kirim, Shift+Enter baris baru)"></textarea>
-        <button class="btn primary" id="sendBtn" type="button">Kirim</button>
+    <div class="composer-dock">
+      <div class="composer-shell">
+        <textarea id="mainQueryField" class="composer-textarea" rows="1" placeholder="Ketik pertanyaan analitik data... (Enter kirim, Shift+Enter baris baru)"></textarea>
+        <button class="btn primary" id="triggerSendBtn" type="button">Kirim</button>
       </div>
-      <div class="input-hint">
+      <div class="composer-meta-row">
         <span>Tekan Enter untuk memproses</span>
-        <button class="btn" id="clearHistoryBtn" style="padding: 2px 6px; min-height: auto; font-size: 11px;">Bersihkan</button>
+        <button class="clear-history-action" id="wipeHistoryBtn" type="button">Bersihkan Riwayat</button>
       </div>
     </div>
   </section>
 
-  <!-- Pane Kanan: Hasil & Detail -->
-  <section class="pane-inspector" id="paneInspector" aria-label="Panel hasil query">
-    <div class="inspector-empty" id="inspectorPlaceholder">
-      <svg class="inspector-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Right Pane -->
+  <section class="pane-inspector" id="paneInspector" aria-label="Panel hasil analitik">
+    <div class="inspector-blank-slate" id="inspectorBlank">
+      <svg class="blank-slate-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
         <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
       </svg>
-      <h2>Lembar Hasil Belum Dipilih</h2>
-      <p>Kirim pertanyaan baru atau klik kartu riwayat di sebelah kiri untuk melihat ringkasan insight, visualisasi chart, dan data tabular.</p>
+      <div class="blank-slate-title">Lembar Analitik Siap Digunakan</div>
+      <div class="blank-slate-desc">Kirim pertanyaan atau pilih kartu riwayat di sebelah kiri untuk menelaah intisari analitik, grafik visual, tabel data terstruktur, serta query SQL read-only.</div>
     </div>
 
-    <div id="inspectorContent" style="display: none;"></div>
+    <div id="inspectorDeck" style="display: none;"></div>
   </section>
 </main>
 
-<!-- Modal Pengaturan Koneksi -->
-<div class="modal-scrim" id="settingsScrim" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-  <div class="modal-body">
-    <div class="modal-header">
-      <h2 class="modal-title" id="modalTitle">Pengaturan Koneksi Engine</h2>
-      <button class="btn" id="closeSettingsBtn" aria-label="Tutup modal" style="padding: 4px 8px; min-height: auto;">Tutup</button>
+<!-- Modal Konfigurasi -->
+<div class="dialog-scrim" id="configDialog" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
+  <div class="dialog-card">
+    <div class="dialog-header">
+      <h2 class="dialog-title" id="dialogTitle">Konektivitas Engine InsightKit</h2>
+      <button class="btn" id="dismissConfigBtn" aria-label="Tutup pengaturan" style="padding: 2px 8px; min-height: auto;">Tutup</button>
     </div>
-    <p class="modal-desc">Konfigurasi alamat endpoint InsightKit API dan kredensial API key. Data disimpan lokal di peramban.</p>
+    <p class="dialog-subtext">Pilih mode operasi lokal mandiri atau tautkan langsung ke server backend InsightKit aktif.</p>
 
-    <div class="form-group">
-      <label for="apiUrlInput">API Base URL</label>
-      <input type="text" id="apiUrlInput" class="form-input" placeholder="http://localhost:8000">
-    </div>
-
-    <div class="form-group">
-      <label for="apiKeyInput">API Key (X-API-Key)</label>
-      <input type="password" id="apiKeyInput" class="form-input" placeholder="ik_...">
-    </div>
-
-    <div class="form-group">
-      <label for="demoToggle">Mode Operasi</label>
-      <select id="modeSelect" class="form-input">
-        <option value="demo">Data Demo Interaktif (Lokal tanpa server)</option>
-        <option value="remote">Server InsightKit API (Live)</option>
+    <div class="dialog-field">
+      <label for="operationModeSelect">Pilihan Mode Operasi</label>
+      <select id="operationModeSelect" class="dialog-input">
+        <option value="demo">Sandbox Demo Interaktif (Lokal tanpa server)</option>
+        <option value="remote">InsightKit API Server (Produksi / Dev)</option>
       </select>
     </div>
 
-    <div class="conn-status-row" id="connStatusMsg"></div>
+    <div class="dialog-field">
+      <label for="apiUrlInput">API Base URL</label>
+      <input type="text" id="apiUrlInput" class="dialog-input" placeholder="http://localhost:8000">
+    </div>
 
-    <div class="modal-footer">
-      <button class="btn" id="testConnBtn" type="button">Uji Koneksi</button>
-      <button class="btn primary" id="saveSettingsBtn" type="button">Simpan</button>
+    <div class="dialog-field">
+      <label for="apiKeyInput">API Key (X-API-Key)</label>
+      <input type="password" id="apiKeyInput" class="dialog-input" placeholder="ik_...">
+    </div>
+
+    <div class="dialog-telemetry" id="dialogStatusNote"></div>
+
+    <div class="dialog-footer">
+      <button class="btn" id="probeConnectionBtn" type="button">Uji Endpoint</button>
+      <button class="btn primary" id="applyConfigBtn" type="button">Terapkan</button>
     </div>
   </div>
 </div>
@@ -770,144 +852,140 @@
 <script>
 const $ = (id) => document.getElementById(id);
 
-// State management
-const state = {
+// App State
+const store = {
   url: localStorage.getItem("ik_url") || "http://localhost:8000",
   key: localStorage.getItem("ik_key") || "",
   mode: localStorage.getItem("ik_mode") || "demo",
   theme: localStorage.getItem("ik_theme") || "light",
   busy: false,
-  items: [],
-  activeIdx: -1,
-  mobileView: "query",
+  records: [],
+  activeCursor: -1,
 };
 
-// Initial theme application
-function applyTheme(theme) {
-  state.theme = theme;
+// Theme Controller
+function setVisualTheme(theme) {
+  store.theme = theme;
   document.documentElement.setAttribute("data-theme", theme);
   localStorage.setItem("ik_theme", theme);
-  $("themeLabel").textContent = theme === "dark" ? "Terang" : "Gelap";
+  $("themeToggleText").textContent = theme === "dark" ? "Terang" : "Gelap";
 }
-applyTheme(state.theme);
+setVisualTheme(store.theme);
 
-$("themeBtn").addEventListener("click", () => {
-  applyTheme(state.theme === "dark" ? "light" : "dark");
+$("themeToggleBtn").addEventListener("click", () => {
+  setVisualTheme(store.theme === "dark" ? "light" : "dark");
 });
 
-function updateConnIndicator() {
-  const isDemo = state.mode === "demo";
-  $("connLabel").textContent = isDemo ? "Demo Lokal" : "Server API";
-  $("connDot").className = "status-dot " + (isDemo ? "offline" : "active");
+function refreshConnectionPill() {
+  const isDemo = store.mode === "demo";
+  $("statusModeLabel").textContent = isDemo ? "Sandbox Demo" : "Live API Server";
+  $("statusIndicator").className = "status-indicator " + (isDemo ? "demo" : "live");
 }
-updateConnIndicator();
+refreshConnectionPill();
 
 // Modal logic
-function openSettings() {
-  $("apiUrlInput").value = state.url;
-  $("apiKeyInput").value = state.key;
-  $("modeSelect").value = state.mode;
-  $("connStatusMsg").textContent = "";
-  $("settingsScrim").classList.add("open");
+function openConfigModal() {
+  $("apiUrlInput").value = store.url;
+  $("apiKeyInput").value = store.key;
+  $("operationModeSelect").value = store.mode;
+  $("dialogStatusNote").textContent = "";
+  $("configDialog").classList.add("open");
   $("apiUrlInput").focus();
 }
 
-function closeSettings() {
-  $("settingsScrim").classList.remove("open");
-  $("queryInput").focus();
+function dismissConfigModal() {
+  $("configDialog").classList.remove("open");
+  $("mainQueryField").focus();
 }
 
-$("openSettingsBtn").addEventListener("click", openSettings);
-$("closeSettingsBtn").addEventListener("click", closeSettings);
-$("settingsScrim").addEventListener("click", (e) => {
-  if (e.target === $("settingsScrim")) closeSettings();
+$("openConfigBtn").addEventListener("click", openConfigModal);
+$("dismissConfigBtn").addEventListener("click", dismissConfigModal);
+$("configDialog").addEventListener("click", (e) => {
+  if (e.target === $("configDialog")) dismissConfigModal();
 });
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && $("settingsScrim").classList.contains("open")) {
-    closeSettings();
+  if (e.key === "Escape" && $("configDialog").classList.contains("open")) {
+    dismissConfigModal();
   }
 });
 
-$("saveSettingsBtn").addEventListener("click", () => {
-  state.url = $("apiUrlInput").value.trim().replace(/\/+$/, "");
-  state.key = $("apiKeyInput").value.trim();
-  state.mode = $("modeSelect").value;
-  localStorage.setItem("ik_url", state.url);
-  localStorage.setItem("ik_key", state.key);
-  localStorage.setItem("ik_mode", state.mode);
-  updateConnIndicator();
-  closeSettings();
+$("applyConfigBtn").addEventListener("click", () => {
+  store.url = $("apiUrlInput").value.trim().replace(/\/+$/, "");
+  store.key = $("apiKeyInput").value.trim();
+  store.mode = $("operationModeSelect").value;
+  localStorage.setItem("ik_url", store.url);
+  localStorage.setItem("ik_key", store.key);
+  localStorage.setItem("ik_mode", store.mode);
+  refreshConnectionPill();
+  dismissConfigModal();
 });
 
-$("testConnBtn").addEventListener("click", async () => {
+$("probeConnectionBtn").addEventListener("click", async () => {
   const base = $("apiUrlInput").value.trim().replace(/\/+$/, "");
   const key = $("apiKeyInput").value.trim();
-  const st = $("connStatusMsg");
-  st.textContent = "Menguji koneksi...";
-  st.style.color = "var(--text-muted)";
+  const note = $("dialogStatusNote");
+  note.textContent = "Menguji respon endpoint...";
+  note.style.color = "var(--text-muted)";
 
   try {
     const res = await fetch(`${base}/api/v1/health`, {
       headers: { "X-API-Key": key }
     });
     if (res.ok) {
-      const data = await res.json();
-      st.style.color = "var(--ok-text)";
-      st.textContent = `Terhubung: database ${data.database ? "aktif" : "siaga"}, model ${data.model}`;
+      const payload = await res.json();
+      note.style.color = "var(--ok-text)";
+      note.textContent = `Berhasil terhubung: DB ${payload.database ? "Read-Only OK" : "Siaga"}, Model ${payload.model}`;
     } else {
-      st.style.color = "var(--err-text)";
-      st.textContent = `Gagal (HTTP ${res.status}): pastikan API key dan URL valid`;
+      note.style.color = "var(--err-text)";
+      note.textContent = `Peringatan HTTP ${res.status}: Kredensial atau endpoint tidak sesuai`;
     }
   } catch (err) {
-    st.style.color = "var(--err-text)";
-    st.textContent = "Tidak dapat menjangkau server API: " + err.message;
+    note.style.color = "var(--err-text)";
+    note.textContent = "Gagal menjangkau host: " + err.message;
   }
 });
 
-// Mobile tab switcher
-$("tabQueryBtn").addEventListener("click", () => {
-  state.mobileView = "query";
-  $("workspace").setAttribute("data-mobile-view", "query");
-  $("tabQueryBtn").classList.add("active");
-  $("tabInspectorBtn").classList.remove("active");
+// Mobile segmented tabs
+$("mobileQueryTab").addEventListener("click", () => {
+  $("workspaceRoot").setAttribute("data-mobile-pane", "query");
+  $("mobileQueryTab").classList.add("active");
+  $("mobileInspectTab").classList.remove("active");
 });
-$("tabInspectorBtn").addEventListener("click", () => {
-  state.mobileView = "inspector";
-  $("workspace").setAttribute("data-mobile-view", "inspector");
-  $("tabInspectorBtn").classList.add("active");
-  $("tabQueryBtn").classList.remove("active");
+$("mobileInspectTab").addEventListener("click", () => {
+  $("workspaceRoot").setAttribute("data-mobile-pane", "inspector");
+  $("mobileInspectTab").classList.add("active");
+  $("mobileQueryTab").classList.remove("active");
 });
 
-// Helper escapes
-function esc(str) {
-  if (str == null) return "";
-  const d = document.createElement("div");
-  d.textContent = String(str);
-  return d.innerHTML;
+function sanitize(text) {
+  if (text == null) return "";
+  const div = document.createElement("div");
+  div.textContent = String(text);
+  return div.innerHTML;
 }
 
-// Built-in Demo Mock Engine
-function getDemoResponse(q) {
-  const lower = q.toLowerCase();
-  if (lower.includes("status paid") || lower.includes("revenue")) {
+// Built-in Deterministic Engine for Sandbox
+function computeDemoData(query) {
+  const q = query.toLowerCase();
+  if (q.includes("paid") || q.includes("revenue") || q.includes("omset")) {
     return {
-      sql: "SELECT SUM(amount) AS total_revenue, COUNT(*) AS paid_orders FROM orders WHERE status = 'paid';",
+      sql: "SELECT SUM(amount) AS total_revenue, COUNT(*) AS paid_transactions FROM orders WHERE status = 'paid';",
       insight: "Total pendapatan terverifikasi dari pesanan berstatus paid adalah Rp 12.450.000 dari total 4 transaksi berhasil.",
-      columns: ["total_revenue", "paid_orders"],
-      rows: [{ total_revenue: 12450000, paid_orders: 4 }],
-      latency_ms: 38,
-      tokens: 412,
-      model: "qwen2.5-coder (demo)",
+      columns: ["total_revenue", "paid_transactions"],
+      rows: [{ total_revenue: 12450000, paid_transactions: 4 }],
+      latency_ms: 32,
+      tokens: 380,
+      model: "qwen2.5-coder (demo sandbox)",
       chart: {
         data: [{ x: ["Paid Orders"], y: [12450000], type: "bar", marker: { color: "#0284c7" } }],
         layout: { title: "Total Revenue Paid (IDR)", xaxis: { title: "Status" }, yaxis: { title: "Rupiah" } }
       }
     };
   }
-  if (lower.includes("tren") || lower.includes("bulan")) {
+  if (q.includes("tren") || q.includes("bulan")) {
     return {
-      sql: "SELECT strftime('%Y-%m', created_at) AS bulan, SUM(amount) AS revenue FROM orders GROUP BY bulan ORDER BY bulan;",
-      insight: "Pendapatan bulanan menunjukkan kenaikan stabil dari bulan Januari hingga April, dengan puncak transaksi di bulan Maret.",
+      sql: "SELECT strftime('%Y-%m', created_at) AS bulan, SUM(amount) AS revenue FROM orders GROUP BY bulan ORDER BY bulan ASC;",
+      insight: "Pendapatan stabil meningkat dari Januari (Rp 3.200.000) hingga puncaknya pada Maret (Rp 5.600.000).",
       columns: ["bulan", "revenue"],
       rows: [
         { bulan: "2025-01", revenue: 3200000 },
@@ -915,9 +993,9 @@ function getDemoResponse(q) {
         { bulan: "2025-03", revenue: 5600000 },
         { bulan: "2025-04", revenue: 4800000 }
       ],
-      latency_ms: 45,
-      tokens: 480,
-      model: "qwen2.5-coder (demo)",
+      latency_ms: 39,
+      tokens: 440,
+      model: "qwen2.5-coder (demo sandbox)",
       chart: {
         data: [{
           x: ["2025-01", "2025-02", "2025-03", "2025-04"],
@@ -926,23 +1004,23 @@ function getDemoResponse(q) {
           mode: "lines+markers",
           line: { color: "#0284c7", width: 2.5 }
         }],
-        layout: { title: "Tren Pendapatan Bulanan 2025", xaxis: { title: "Bulan" }, yaxis: { title: "Revenue" } }
+        layout: { title: "Tren Revenue Bulanan 2025", xaxis: { title: "Bulan" }, yaxis: { title: "Rupiah" } }
       }
     };
   }
-  if (lower.includes("status")) {
+  if (q.includes("status")) {
     return {
       sql: "SELECT status, COUNT(*) AS count, SUM(amount) AS total FROM orders GROUP BY status;",
-      insight: "Terdapat 3 kategori status order: Paid (4 transaksi), Pending (2 transaksi), dan Refunded (1 transaksi).",
+      insight: "Distribusi pesanan terbagi menjadi: Paid (4 pesanan), Pending (2 pesanan), dan Refunded (1 pesanan).",
       columns: ["status", "count", "total"],
       rows: [
         { status: "paid", count: 4, total: 12450000 },
         { status: "pending", count: 2, total: 3100000 },
         { status: "refunded", count: 1, total: 500000 }
       ],
-      latency_ms: 32,
-      tokens: 390,
-      model: "qwen2.5-coder (demo)",
+      latency_ms: 28,
+      tokens: 360,
+      model: "qwen2.5-coder (demo sandbox)",
       chart: {
         data: [{ x: ["paid", "pending", "refunded"], y: [4, 2, 1], type: "bar", marker: { color: ["#15803d", "#b45309", "#b91c1c"] } }],
         layout: { title: "Distribusi Status Pesanan", xaxis: { title: "Status" }, yaxis: { title: "Jumlah" } }
@@ -951,240 +1029,239 @@ function getDemoResponse(q) {
   }
   return {
     sql: "SELECT id, name, city, email FROM customers WHERE city IN ('Jakarta', 'Surabaya') LIMIT 10;",
-    insight: "Ditemukan 3 pelanggan terdaftar di area Jakarta dan Surabaya dengan akun aktif.",
+    insight: "Ditemukan 3 pelanggan aktif di wilayah Jakarta dan Surabaya. Kolom email secara otomatis disanitasi oleh guardrail PII.",
     columns: ["id", "name", "city", "email"],
     rows: [
       { id: 101, name: "Budi Santoso", city: "Jakarta", email: "budi.s***@example.com" },
       { id: 102, name: "Siti Rahma", city: "Surabaya", email: "siti.r***@example.com" },
       { id: 105, name: "Ahmad Fauzi", city: "Jakarta", email: "ahmad.f***@example.com" }
     ],
-    latency_ms: 41,
+    latency_ms: 36,
     tokens: 350,
-    model: "qwen2.5-coder (demo)",
+    model: "qwen2.5-coder (demo sandbox)",
     chart: null
   };
 }
 
-// History and Card updates
-function renderHistoryItem(idx) {
-  const item = state.items[idx];
-  const card = $(`card-${idx}`);
-  if (!card) return;
+// UI Rendering
+function updateCardPresentation(index) {
+  const item = store.records[index];
+  const outer = $(`outer-bezel-${index}`);
+  if (!outer) return;
 
-  const statusClass = item.status === "ok" ? "ok" : item.status === "running" ? "running" : item.status === "no_data" ? "no_data" : "error";
-  card.innerHTML = `
-    <div class="ai-summary">${esc(item.insight || item.error || "Menjalankan pipeline analisis...")}</div>
-    <div class="ai-footer">
-      <span class="ai-status ${statusClass}">${esc(item.status)}</span>
-      <span>${item.latency_ms ? item.latency_ms + "ms" : ""}</span>
+  const tagClass = item.status === "ok" ? "ok" : item.status === "running" ? "running" : "error";
+  outer.innerHTML = `
+    <div class="ai-bezel-inner">
+      <div class="ai-preview-text">${sanitize(item.insight || item.error || "Menjalankan pipeline introspeksi & kueri data...")}</div>
+      <div class="ai-card-telemetry">
+        <span class="telemetry-tag ${tagClass}">${sanitize(item.status)}</span>
+        <span>${item.latency_ms ? item.latency_ms + " ms" : ""}</span>
+      </div>
     </div>
   `;
 }
 
-function selectItem(idx) {
-  state.activeIdx = idx;
-  document.querySelectorAll(".ai-card").forEach((el, i) => {
-    el.classList.toggle("active", i === idx);
+function activateRecord(index) {
+  store.activeCursor = index;
+  document.querySelectorAll(".ai-bezel-outer").forEach((el, i) => {
+    el.classList.toggle("selected", i === index);
   });
-  renderInspector(idx);
+  renderActiveInspector(index);
 
-  // Switch to inspector view on mobile automatically
-  if (window.innerWidth <= 768) {
-    $("tabInspectorBtn").click();
+  if (window.innerWidth <= 820) {
+    $("mobileInspectTab").click();
   }
 }
 
-function renderInspector(idx) {
-  const item = state.items[idx];
-  if (!item) return;
+function renderActiveInspector(index) {
+  const record = store.records[index];
+  if (!record) return;
 
-  $("inspectorPlaceholder").style.display = "none";
-  const content = $("inspectorContent");
-  content.style.display = "block";
+  $("inspectorBlank").style.display = "none";
+  const deck = $("inspectorDeck");
+  deck.style.display = "block";
 
-  let html = `<article class="result-sheet">`;
+  let html = `<div class="sheet-outer"><article class="sheet-inner">`;
   html += `
-    <header class="result-header">
-      <h1 class="result-title">${esc(item.question)}</h1>
-      <div class="stats-bar">
-        <span class="stats-item">Status: <strong>${esc(item.status)}</strong></span>
-        ${item.latency_ms ? `<span class="stats-item">Waktu: <strong>${item.latency_ms} ms</strong></span>` : ""}
-        ${item.tokens ? `<span class="stats-item">Token: <strong>${item.tokens}</strong></span>` : ""}
-        ${item.row_count != null ? `<span class="stats-item">Baris: <strong>${item.row_count}</strong></span>` : ""}
-        ${item.model ? `<span class="stats-item">Model: <strong>${esc(item.model)}</strong></span>` : ""}
+    <header class="sheet-header">
+      <h1 class="sheet-query-title">${sanitize(record.question)}</h1>
+      <div class="sheet-kpi-bar">
+        <span class="kpi-chip">Status: <strong>${sanitize(record.status)}</strong></span>
+        ${record.latency_ms ? `<span class="kpi-chip">Latensi: <strong>${record.latency_ms} ms</strong></span>` : ""}
+        ${record.tokens ? `<span class="kpi-chip">Penggunaan Token: <strong>${record.tokens}</strong></span>` : ""}
+        ${record.row_count != null ? `<span class="kpi-chip">Jumlah Baris: <strong>${record.row_count}</strong></span>` : ""}
+        ${record.model ? `<span class="kpi-chip">Model: <strong>${sanitize(record.model)}</strong></span>` : ""}
       </div>
     </header>
   `;
 
-  if (item.error) {
+  if (record.error) {
     html += `
       <section>
-        <div class="block-label" style="color: var(--err-text);">Pesan Kendala</div>
-        <div class="insight-box" style="border-color: var(--err-text); background: var(--err-bg); color: var(--err-text);">
-          ${esc(item.error)}
+        <div class="block-heading" style="color: var(--err-text);">Laporan Kendala</div>
+        <div class="insight-callout" style="border-color: var(--err-text); background: var(--err-bg); color: var(--err-text);">
+          ${sanitize(record.error)}
         </div>
       </section>
     `;
   }
 
-  if (item.insight) {
+  if (record.insight) {
     html += `
       <section>
-        <div class="block-label">Ringkasan Analitik</div>
-        <div class="insight-box">${esc(item.insight)}</div>
+        <div class="block-heading">Intisari Analitik</div>
+        <div class="insight-callout">${sanitize(record.insight)}</div>
       </section>
     `;
   }
 
-  if (item.chart) {
+  if (record.chart) {
     html += `
       <section>
-        <div class="block-label">Visualisasi Data</div>
-        <div class="chart-wrapper" id="chartTarget"></div>
+        <div class="block-heading">Visualisasi Kuantitatif</div>
+        <div class="chart-canvas-box" id="plotTargetCanvas"></div>
       </section>
     `;
   }
 
-  if (item.columns && item.columns.length > 0) {
+  if (record.columns && record.columns.length > 0) {
     html += `
       <section>
-        <div class="block-label">Tabel Hasil Query</div>
-        <div class="table-box">
-          <div class="table-scroll">
-            <table class="data-grid">
+        <div class="block-heading">Data Hasil Eksekusi</div>
+        <div class="table-deck">
+          <div class="table-scroll-wrap">
+            <table class="data-table">
               <thead>
-                <tr>${item.columns.map(c => `<th>${esc(c)}</th>`).join("")}</tr>
+                <tr>${record.columns.map(col => `<th>${sanitize(col)}</th>`).join("")}</tr>
               </thead>
               <tbody>
-                ${item.rows.map(row => `<tr>${item.columns.map(c => `<td>${esc(row[c])}</td>`).join("")}</tr>`).join("")}
+                ${record.rows.map(row => `<tr>${record.columns.map(c => `<td>${sanitize(row[c])}</td>`).join("")}</tr>`).join("")}
               </tbody>
             </table>
           </div>
-          <div class="table-actions">
-            <span>Menampilkan ${item.rows.length} dari ${item.row_count ?? item.rows.length} data</span>
-            <button class="btn" id="exportCsvBtn" style="padding: 2px 8px; min-height: auto; font-size: 11px;">Unduh CSV</button>
+          <div class="table-foot-deck">
+            <span>Menampilkan ${record.rows.length} dari ${record.row_count ?? record.rows.length} baris dataset</span>
+            <button class="btn" id="exportDatasetBtn" style="padding: 2px 8px; min-height: auto; font-size: 11px;">Unduh CSV</button>
           </div>
         </div>
       </section>
     `;
   }
 
-  if (item.sql) {
+  if (record.sql) {
     html += `
       <section>
-        <div class="block-label">Query Database</div>
-        <details class="sql-accordion" open>
+        <div class="block-heading">Transparansi Query</div>
+        <details class="sql-drawer" open>
           <summary>
-            <span>Instruksi SQL Read-Only</span>
-            <button class="btn" id="copySqlBtn" type="button" style="padding: 2px 8px; min-height: auto; font-size: 11px;">Salin</button>
+            <span>Perintah SQL Read-Only</span>
+            <button class="btn" id="copySqlQueryBtn" type="button" style="padding: 2px 8px; min-height: auto; font-size: 11px;">Salin Query</button>
           </summary>
-          <pre class="sql-code-box"><code>${esc(item.sql)}</code></pre>
+          <pre class="sql-monobox"><code>${sanitize(record.sql)}</code></pre>
         </details>
       </section>
     `;
   }
 
-  html += `</article>`;
-  content.innerHTML = html;
+  html += `</article></div>`;
+  deck.innerHTML = html;
 
-  // Chart rendering
-  if (item.chart) {
-    renderPlotlyChart(item.chart, "chartTarget");
+  if (record.chart) {
+    dispatchPlotlyRender(record.chart, "plotTargetCanvas");
   }
 
-  // Copy SQL handler
-  const copyBtn = $("copySqlBtn");
+  // Copy SQL
+  const copyBtn = $("copySqlQueryBtn");
   if (copyBtn) {
     copyBtn.addEventListener("click", (e) => {
       e.stopPropagation();
-      navigator.clipboard.writeText(item.sql).then(() => {
+      navigator.clipboard.writeText(record.sql).then(() => {
         copyBtn.textContent = "Tersalin";
-        setTimeout(() => { copyBtn.textContent = "Salin"; }, 1800);
+        setTimeout(() => { copyBtn.textContent = "Salin Query"; }, 1600);
       });
     });
   }
 
-  // Export CSV handler
-  const exportBtn = $("exportCsvBtn");
-  if (exportBtn && item.columns.length > 0) {
+  // Export CSV
+  const exportBtn = $("exportDatasetBtn");
+  if (exportBtn && record.columns.length > 0) {
     exportBtn.addEventListener("click", () => {
-      const csv = [
-        item.columns.join(","),
-        ...item.rows.map(r => item.columns.map(c => JSON.stringify(r[c] ?? "")).join(","))
+      const csvContent = [
+        record.columns.join(","),
+        ...record.rows.map(row => record.columns.map(c => JSON.stringify(row[c] ?? "")).join(","))
       ].join("\n");
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `query_result_${Date.now()}.csv`;
-      a.click();
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `dataset_insightkit_${Date.now()}.csv`;
+      anchor.click();
       URL.revokeObjectURL(url);
     });
   }
 }
 
-// Chart engine with fallback and theme adaptation
-function renderPlotlyChart(chartSpec, targetId) {
-  const container = $(targetId);
-  if (!container) return;
-  container.innerHTML = `<div style="display:grid; place-items:center; height:360px; color:var(--text-faint); font-size:13px;">Menyiapkan grafik...</div>`;
+function dispatchPlotlyRender(chartSpec, elementId) {
+  const target = $(elementId);
+  if (!target) return;
+  target.innerHTML = `<div style="display:grid; place-items:center; height:340px; color:var(--text-faint); font-size:12.5px;">Menyiapkan visualisasi grafik...</div>`;
 
-  loadPlotly().then(Plotly => {
-    const isDark = state.theme === "dark";
+  requestPlotlyLibrary().then(Plotly => {
+    const isDark = store.theme === "dark";
     const layout = Object.assign({}, chartSpec.layout || {});
     delete layout.template;
 
     layout.paper_bgcolor = "transparent";
     layout.plot_bgcolor = "transparent";
     layout.font = {
-      family: 'ui-sans-serif, system-ui, sans-serif',
+      family: '"Plus Jakarta Sans", ui-sans-serif, sans-serif',
       color: isDark ? "#94a3b8" : "#475569",
-      size: 12
+      size: 11.5
     };
-    layout.margin = { t: 40, r: 24, b: 50, l: 60 };
+    layout.margin = { t: 34, r: 20, b: 46, l: 54 };
     layout.autosize = true;
 
-    Plotly.newPlot(container, chartSpec.data, layout, {
+    Plotly.newPlot(target, chartSpec.data, layout, {
       responsive: true,
       displayModeBar: false,
     });
   }).catch(err => {
-    container.innerHTML = `<div style="padding:20px; color:var(--warn-text); font-size:13px;">Grafik tidak dapat dimuat: CDN Plotly tidak dapat diakses (${esc(err.message)}).</div>`;
+    target.innerHTML = `<div style="padding:16px; color:var(--warn-text); font-size:12.5px;">Plotly CDN tidak dapat dijangkau (${sanitize(err.message)}). Data tabular tetap tersedia di bawah.</div>`;
   });
 }
 
-function loadPlotly() {
+function requestPlotlyLibrary() {
   return new Promise((resolve, reject) => {
     if (window.Plotly) return resolve(window.Plotly);
-    const cdnUrls = [
+    const mirrors = [
       "https://cdn.plotly.com/plotly-2.35.2.min.js",
       "https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js",
       "https://unpkg.com/plotly.js-dist-min@2.35.2/plotly.min.js"
     ];
-    let idx = 0;
-    const tryNext = () => {
-      if (idx >= cdnUrls.length) return reject(new Error("Semua CDN Plotly gagal diakses"));
-      const script = document.createElement("script");
-      script.src = cdnUrls[idx++];
-      script.onload = () => window.Plotly ? resolve(window.Plotly) : tryNext();
-      script.onerror = tryNext;
-      document.head.appendChild(script);
+    let pos = 0;
+    const attempt = () => {
+      if (pos >= mirrors.length) return reject(new Error("Semua mirror CDN Plotly gagal diakses"));
+      const tag = document.createElement("script");
+      tag.src = mirrors[pos++];
+      tag.onload = () => window.Plotly ? resolve(window.Plotly) : attempt();
+      tag.onerror = attempt;
+      document.head.appendChild(tag);
     };
-    tryNext();
+    attempt();
   });
 }
 
-// Ask Pipeline Execution
-async function askQuestion(questionText) {
-  const q = questionText.trim();
-  if (!q || state.busy) return;
+// Pipeline Submission
+async function submitAnalyticQuery(queryString) {
+  const query = queryString.trim();
+  if (!query || store.busy) return;
 
-  $("emptyHistory").style.display = "none";
-  setBusy(true);
+  $("emptyCanvas").style.display = "none";
+  setBusyState(true);
 
-  const idx = state.items.length;
-  state.items.push({
-    question: q,
+  const idx = store.records.length;
+  store.records.push({
+    question: query,
     status: "running",
     insight: "",
     sql: "",
@@ -1198,181 +1275,182 @@ async function askQuestion(questionText) {
     error: ""
   });
 
-  // Add message bubble in history
-  const historyList = $("historyList");
-  const row = document.createElement("div");
-  row.className = "chat-row";
-  row.innerHTML = `
-    <div class="user-bubble">${esc(q)}</div>
-    <div class="ai-card active" id="card-${idx}" tabindex="0" role="button" aria-label="Lihat hasil">
-      <div class="ai-summary">Menghubungi pipeline InsightKit...</div>
-      <div class="ai-footer">
-        <span class="ai-status running">memproses</span>
+  const stream = $("streamContainer");
+  const unit = document.createElement("div");
+  unit.className = "message-unit";
+  unit.innerHTML = `
+    <div class="user-speech-bubble">${sanitize(query)}</div>
+    <div class="ai-bezel-outer selected" id="outer-bezel-${idx}" tabindex="0" role="button" aria-label="Lihat lembar hasil">
+      <div class="ai-bezel-inner">
+        <div class="ai-preview-text">Menghubungi pipeline introspeksi & kueri data...</div>
+        <div class="ai-card-telemetry">
+          <span class="telemetry-tag running">memproses</span>
+        </div>
       </div>
     </div>
   `;
-  historyList.appendChild(row);
-  row.scrollIntoView({ behavior: "smooth", block: "end" });
+  stream.appendChild(unit);
+  unit.scrollIntoView({ behavior: "smooth", block: "end" });
 
-  $(`card-${idx}`).addEventListener("click", () => selectItem(idx));
-  $(`card-${idx}`).addEventListener("keydown", (e) => {
+  $(`outer-bezel-${idx}`).addEventListener("click", () => activateRecord(idx));
+  $(`outer-bezel-${idx}`).addEventListener("keydown", (e) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      selectItem(idx);
+      activateRecord(idx);
     }
   });
 
-  selectItem(idx);
+  activateRecord(idx);
 
-  // If in Demo Mode or invalid URL, use mock responder
-  if (state.mode === "demo" || !/^https?:\/\//i.test(state.url)) {
+  // Demo Sandbox routing
+  if (store.mode === "demo" || !/^https?:\/\//i.test(store.url)) {
     setTimeout(() => {
-      const demo = getDemoResponse(q);
-      const item = state.items[idx];
-      item.status = "ok";
-      item.sql = demo.sql;
-      item.insight = demo.insight;
-      item.columns = demo.columns;
-      item.rows = demo.rows;
-      item.row_count = demo.rows.length;
-      item.latency_ms = demo.latency_ms;
-      item.tokens = demo.tokens;
-      item.model = demo.model;
-      item.chart = demo.chart;
+      const mockResult = computeDemoData(query);
+      const target = store.records[idx];
+      target.status = "ok";
+      target.sql = mockResult.sql;
+      target.insight = mockResult.insight;
+      target.columns = mockResult.columns;
+      target.rows = mockResult.rows;
+      target.row_count = mockResult.rows.length;
+      target.latency_ms = mockResult.latency_ms;
+      target.tokens = mockResult.tokens;
+      target.model = mockResult.model;
+      target.chart = mockResult.chart;
 
-      renderHistoryItem(idx);
-      if (state.activeIdx === idx) renderInspector(idx);
-      setBusy(false);
-    }, 600);
+      updateCardPresentation(idx);
+      if (store.activeCursor === idx) renderActiveInspector(idx);
+      setBusyState(false);
+    }, 550);
     return;
   }
 
-  // Remote API Mode
+  // Live Server SSE
   try {
-    const res = await fetch(`${state.url}/api/v1/ask`, {
+    const res = await fetch(`${store.url}/api/v1/ask`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-API-Key": state.key
+        "X-API-Key": store.key
       },
-      body: JSON.stringify({ question: q }),
+      body: JSON.stringify({ question: query }),
     });
 
     if (!res.ok) {
-      const errPayload = await res.json().catch(() => ({}));
-      throw new Error(errPayload.detail || `HTTP ${res.status}`);
+      const errJson = await res.json().catch(() => ({}));
+      throw new Error(errJson.detail || `HTTP ${res.status}`);
     }
 
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
-    let buffer = "";
+    let residual = "";
 
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      buffer += decoder.decode(value, { stream: true });
+      residual += decoder.decode(value, { stream: true });
 
-      let boundary;
-      while ((boundary = buffer.indexOf("\n\n")) !== -1) {
-        const block = buffer.slice(0, boundary);
-        buffer = buffer.slice(boundary + 2);
-        parseSseBlock(block, idx);
+      let splitIndex;
+      while ((splitIndex = residual.indexOf("\n\n")) !== -1) {
+        const chunk = residual.slice(0, splitIndex);
+        residual = residual.slice(splitIndex + 2);
+        processServerEvent(chunk, idx);
       }
     }
   } catch (err) {
-    const item = state.items[idx];
-    item.status = "error";
-    item.error = "Gagal memproses pertanyaan: " + err.message + (state.key ? "" : " (API key belum diisi di Pengaturan)");
+    const target = store.records[idx];
+    target.status = "error";
+    target.error = "Gagal memproses query: " + err.message + (store.key ? "" : " (API key belum diisi pada menu Koneksi)");
   } finally {
-    renderHistoryItem(idx);
-    if (state.activeIdx === idx) renderInspector(idx);
-    setBusy(false);
+    updateCardPresentation(idx);
+    if (store.activeCursor === idx) renderActiveInspector(idx);
+    setBusyState(false);
   }
 }
 
-function parseSseBlock(block, idx) {
-  const item = state.items[idx];
-  const eventMatch = block.match(/^event: (\w+)/m);
-  const dataMatch = block.match(/^data: (.+)/ms);
-  if (!eventMatch || !dataMatch) return;
+function processServerEvent(chunk, index) {
+  const target = store.records[index];
+  const evMatch = chunk.match(/^event: (\w+)/m);
+  const dataMatch = chunk.match(/^data: (.+)/ms);
+  if (!evMatch || !dataMatch) return;
 
-  const event = eventMatch[1];
-  let data;
-  try { data = JSON.parse(dataMatch[1]); } catch { return; }
+  const eventName = evMatch[1];
+  let parsed;
+  try { parsed = JSON.parse(dataMatch[1]); } catch { return; }
 
-  if (event === "sql") {
-    item.sql = data.sql || "";
-  } else if (event === "result") {
-    item.columns = data.columns || [];
-    item.rows = data.rows || [];
-    item.row_count = data.row_count || 0;
-  } else if (event === "insight") {
-    item.insight = data.insight || "";
-  } else if (event === "chart") {
-    item.chart = data.chart || null;
-  } else if (event === "done") {
-    item.status = data.status || "ok";
-    item.latency_ms = data.latency_ms || 0;
-    item.tokens = data.tokens || 0;
-    item.row_count = data.row_count ?? item.row_count;
-    item.error = data.error || item.error;
+  if (eventName === "sql") {
+    target.sql = parsed.sql || "";
+  } else if (eventName === "result") {
+    target.columns = parsed.columns || [];
+    target.rows = parsed.rows || [];
+    target.row_count = parsed.row_count || 0;
+  } else if (eventName === "insight") {
+    target.insight = parsed.insight || "";
+  } else if (eventName === "chart") {
+    target.chart = parsed.chart || null;
+  } else if (eventName === "done") {
+    target.status = parsed.status || "ok";
+    target.latency_ms = parsed.latency_ms || 0;
+    target.tokens = parsed.tokens || 0;
+    target.row_count = parsed.row_count ?? target.row_count;
+    target.error = parsed.error || target.error;
   }
 
-  renderHistoryItem(idx);
-  if (state.activeIdx === idx) renderInspector(idx);
+  updateCardPresentation(index);
+  if (store.activeCursor === index) renderActiveInspector(index);
 }
 
-function setBusy(b) {
-  state.busy = b;
-  $("sendBtn").disabled = b;
-  $("queryInput").disabled = b;
-  document.querySelectorAll(".preset-chip").forEach(c => c.disabled = b);
-  $("queryInput").placeholder = b ? "Memproses query..." : "Ketik pertanyaan analitik... (Enter kirim, Shift+Enter baris baru)";
+function setBusyState(stateBool) {
+  store.busy = stateBool;
+  $("triggerSendBtn").disabled = stateBool;
+  $("mainQueryField").disabled = stateBool;
+  document.querySelectorAll(".preset-chip").forEach(c => c.disabled = stateBool);
+  $("mainQueryField").placeholder = stateBool ? "Memproses query pada pipeline data..." : "Ketik pertanyaan analitik data... (Enter kirim, Shift+Enter baris baru)";
 }
 
-// Input and Event Bindings
-$("sendBtn").addEventListener("click", () => {
-  const val = $("queryInput").value;
-  $("queryInput").value = "";
-  $("queryInput").style.height = "auto";
-  askQuestion(val);
+// User Actions
+$("triggerSendBtn").addEventListener("click", () => {
+  const val = $("mainQueryField").value;
+  $("mainQueryField").value = "";
+  $("mainQueryField").style.height = "auto";
+  submitAnalyticQuery(val);
 });
 
-$("queryInput").addEventListener("keydown", (e) => {
+$("mainQueryField").addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
-    $("sendBtn").click();
+    $("triggerSendBtn").click();
   }
 });
 
-$("queryInput").addEventListener("input", () => {
-  const el = $("queryInput");
-  el.style.height = "auto";
-  el.style.height = Math.min(el.scrollHeight, 140) + "px";
+$("mainQueryField").addEventListener("input", () => {
+  const field = $("mainQueryField");
+  field.style.height = "auto";
+  field.style.height = Math.min(field.scrollHeight, 120) + "px";
 });
 
 document.querySelectorAll(".preset-chip").forEach(chip => {
   chip.addEventListener("click", () => {
-    askQuestion(chip.textContent);
+    submitAnalyticQuery(chip.textContent);
   });
 });
 
-$("clearHistoryBtn").addEventListener("click", () => {
-  state.items = [];
-  state.activeIdx = -1;
-  $("historyList").innerHTML = `
-    <div class="empty-history" id="emptyHistory">
-      <div class="empty-history-title">Riwayat Dibersihkan</div>
-      <div class="empty-history-sub">Ketik pertanyaan analitik baru atau pilih dari contoh di atas.</div>
+$("wipeHistoryBtn").addEventListener("click", () => {
+  store.records = [];
+  store.activeCursor = -1;
+  $("streamContainer").innerHTML = `
+    <div class="empty-stream-canvas" id="emptyCanvas">
+      <div class="empty-canvas-title">Riwayat Dibersihkan</div>
+      <div class="empty-canvas-desc">Ajukan pertanyaan analitik baru atau gunakan tombol query cepat di atas.</div>
     </div>
   `;
-  $("inspectorPlaceholder").style.display = "block";
-  $("inspectorContent").style.display = "none";
+  $("inspectorBlank").style.display = "block";
+  $("inspectorDeck").style.display = "none";
 });
 
-// Initialization
-setBusy(false);
-$("queryInput").focus();
+// Boot
+setBusyState(false);
+$("mainQueryField").focus();
 </script>
 </body>
 </html>
