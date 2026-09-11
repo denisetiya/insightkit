@@ -1,27 +1,22 @@
-# InsightKit Web UI (standalone)
+# InsightKit Web Workspace
 
-Chat UI single-file untuk tanya-jawab data via InsightKit API. **Tanpa build, tanpa server** — buka langsung di browser.
+Antarmuka web mandiri (single-file HTML) untuk eksplorasi dan tanya jawab analitik data via InsightKit API. Tanpa proses build, cukup buka langsung di peramban.
 
-## Cara pakai
+## Cara penggunaan
 
-1. Download `index.html` → buka di browser (double-click).
-2. Klik **Pengaturan** → isi:
-   - **API URL**: `https://insightkit.denisetiya.site` (atau `http://localhost:8002` kalau server lokal)
-   - **API Key**: key dari `insightkit user create ...`
-   - Klik **Tes Koneksi** → **Simpan**
-3. Ketik pertanyaan (atau klik contoh di atas) → jawaban tampil: insight, tabel hasil query, chart (Plotly), dan SQL-nya (klik "Lihat SQL").
+1. Buka file `index.html` langsung di peramban peramban Anda.
+2. Klik tombol **Koneksi** di pojok kanan atas:
+   - Pilih mode **Data Demo Interaktif** untuk mencoba seketika tanpa server lokal, atau
+   - Pilih mode **Server InsightKit API**, lalu masukkan alamat API URL (default `http://localhost:8000`) dan API Key Anda.
+   - Klik **Uji Koneksi**, lalu tekan **Simpan**.
+3. Ketik pertanyaan analitik pada kolom input di bawah atau pilih dari tombol contoh yang tersedia.
+4. Lembar inspektur di sebelah kanan akan menampilkan ringkasan fakta, grafik analitik Plotly, cuplikan tabel data, serta instruksi SQL read-only yang dieksekusi.
 
-## Fitur
+## Fitur utama
 
-- Streaming SSE real-time (plan → sql → result → insight → chart → done)
-- Tabel hasil query (raw data, max 50 baris)
-- Chart otomatis (Plotly.js dari CDN)
-- SQL bisa dilihat per pertanyaan
-- Status per jawaban: latency, tokens, row count, cached
-- URL + key tersimpan di localStorage (tidak dikirim ke mana pun)
-- Light theme, palette blue→cyan
-
-## Catatan
-
-- Butuh koneksi internet untuk Plotly CDN (atau download plotly.min.js dan ganti `<script src>`-nya ke file lokal).
-- API harus mengizinkan CORS (sudah default di InsightKit server).
+* Aliran respons real-time (SSE streaming) dengan pelacakan status bertahap.
+* Mode demo interaktif bawaan untuk simulasi tanpa memerlukan server Python aktif.
+* Penyesuaian tema warna Gelap dan Terang dengan rasio kontras tinggi (WCAG AA).
+* Tampilan responsif untuk desktop dan perangkat seluler dengan tab navigasi adaptif.
+* Tabel data tabular dilengkapi fitur unduh berkas CSV.
+* Aksesibilitas keyboard penuh (navigasi Tab, Enter, dan tombol Escape untuk dialog).

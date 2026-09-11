@@ -3,326 +3,1376 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>InsightKit — Tanya Datamu</title>
+<title>InsightKit: Workspace Tanya Data</title>
 <style>
   :root {
-    --blue: #2563eb; --cyan: #06b6d4; --ink: #0f172a; --muted: #64748b;
-    --bg: #f8fafc; --card: #ffffff; --line: #e2e8f0; --soft: #f1f5f9;
-    --ok: #059669; --warn: #d97706; --err: #dc2626;
+    --bg-page: #f8fafc;
+    --bg-surface: #ffffff;
+    --bg-subtle: #f1f5f9;
+    --border: #e2e8f0;
+    --border-strong: #cbd5e1;
+    --text-main: #0f172a;
+    --text-muted: #475569;
+    --text-faint: #64748b;
+    --accent: #0369a1;
+    --accent-hover: #0284c7;
+    --accent-focus: rgba(3, 105, 161, 0.2);
+    --badge-bg: #e0f2fe;
+    --badge-text: #0369a1;
+    --ok-bg: #ecfdf5;
+    --ok-text: #15803d;
+    --warn-bg: #fffbeb;
+    --warn-text: #b45309;
+    --err-bg: #fef2f2;
+    --err-text: #b91c1c;
+    --code-bg: #0f172a;
+    --code-text: #f8fafc;
+    --card-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+    --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
   }
+
+  [data-theme="dark"] {
+    --bg-page: #090d16;
+    --bg-surface: #0f172a;
+    --bg-subtle: #1e293b;
+    --border: #1e293b;
+    --border-strong: #334155;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --text-faint: #64748b;
+    --accent: #38bdf8;
+    --accent-hover: #0ea5e9;
+    --accent-focus: rgba(56, 189, 248, 0.25);
+    --badge-bg: #0c4a6e;
+    --badge-text: #7dd3fc;
+    --ok-bg: #064e3b;
+    --ok-text: #6ee7b7;
+    --warn-bg: #78350f;
+    --warn-text: #fde68a;
+    --err-bg: #7f1d1d;
+    --err-text: #fca5a5;
+    --code-bg: #030712;
+    --code-text: #f8fafc;
+    --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, "Segoe UI", Roboto, Inter, sans-serif; background: var(--bg); color: var(--ink); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-  header { display: flex; align-items: center; gap: 12px; padding: 12px 20px; background: var(--card); border-bottom: 1px solid var(--line); flex-shrink: 0; }
-  .logo { width: 32px; height: 32px; border-radius: 9px; background: linear-gradient(135deg, var(--blue), var(--cyan)); display: grid; place-items: center; flex-shrink: 0; }
-  .logo svg { width: 18px; height: 18px; }
-  header h1 { font-size: 16px; font-weight: 700; }
-  header .sub { font-size: 12px; color: var(--muted); }
-  .spacer { flex: 1; }
-  .btn { border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 8px; padding: 7px 14px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
-  .btn:hover { border-color: var(--cyan); color: var(--blue); }
-  .btn.primary { background: linear-gradient(135deg, var(--blue), var(--cyan)); color: #fff; border: none; }
-  .btn:disabled { opacity: .5; cursor: not-allowed; }
-  .chips { display: flex; gap: 8px; flex-wrap: wrap; padding: 10px 20px; border-bottom: 1px solid var(--line); background: var(--card); flex-shrink: 0; }
-  .chip { border: 1px solid var(--line); background: var(--bg); border-radius: 999px; padding: 5px 12px; font-size: 12px; color: var(--muted); cursor: pointer; }
-  .chip:hover { border-color: var(--cyan); color: var(--blue); }
-  .chip:disabled { opacity: .4; cursor: not-allowed; }
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg-page);
+    color: var(--text-main);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
 
-  .main { flex: 1; display: flex; min-height: 0; }
-  /* ---- kiri: chat ---- */
-  .chat-pane { width: 46%; min-width: 400px; max-width: 560px; border-right: 1px solid var(--line); display: flex; flex-direction: column; background: var(--card); }
-  #chat { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
-  .msg { max-width: 100%; }
-  .user-msg { align-self: flex-end; background: linear-gradient(135deg, var(--blue), var(--cyan)); color: #fff; border-radius: 14px 14px 4px 14px; padding: 9px 13px; font-size: 13.5px; line-height: 1.45; }
-  .ai-msg { background: var(--soft); border: 1px solid var(--line); border-radius: 4px 14px 14px 14px; padding: 10px 13px; font-size: 13.5px; cursor: pointer; }
-  .ai-msg:hover { border-color: var(--cyan); }
-  .ai-msg .preview { color: var(--ink); white-space: pre-wrap; line-height: 1.45; }
-  .ai-msg .ai-meta { display: flex; gap: 8px; margin-top: 7px; font-size: 11px; color: var(--muted); align-items: center; }
-  .ai-msg .view-link { color: var(--blue); font-weight: 600; font-size: 11.5px; }
-  .thinking { color: var(--muted); font-size: 12.5px; font-style: italic; }
-  .badge { padding: 2px 8px; border-radius: 999px; font-weight: 700; font-size: 10.5px; }
-  .badge.ok { background: #ecfdf5; color: var(--ok); } .badge.no_data { background: #fffbeb; color: var(--warn); } .badge.error { background: #fef2f2; color: var(--err); } .badge.cached { background: #eff6ff; color: var(--blue); }
-  .err { color: var(--err); font-size: 12.5px; margin-top: 8px; }
-  #inputbar { display: flex; gap: 10px; padding: 12px 16px 14px; border-top: 1px solid var(--line); }
-  #q { flex: 1; resize: none; border: 1px solid var(--line); border-radius: 12px; padding: 11px 13px; font: inherit; font-size: 13.5px; outline: none; max-height: 130px; }
-  #q:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(6,182,212,.15); }
-  #q:disabled { background: var(--soft); }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 16px;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
 
-  /* ---- kanan: hasil ---- */
-  .result-pane { flex: 1; overflow-y: auto; padding: 20px; background: var(--bg); }
-  #placeholder { color: var(--muted); text-align: center; margin-top: 18vh; font-size: 14px; }
-  #placeholder svg { opacity: .25; margin-bottom: 12px; }
-  .result-card { max-width: 900px; margin: 0 auto; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; box-shadow: 0 1px 3px rgba(15,23,42,.05); }
-  .result-q { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
-  .meta { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11px; color: var(--muted); margin-bottom: 14px; }
-  .meta b { color: var(--ink); font-weight: 600; }
-  .insight { font-size: 15px; line-height: 1.65; white-space: pre-wrap; }
-  .section-label { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 18px 0 6px; }
-  .chart-box { min-height: 400px; width: 100%; }
-  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-  th, td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; }
-  th { background: var(--soft); font-weight: 600; position: sticky; top: 0; }
-  .table-wrap { max-height: 320px; overflow: auto; border: 1px solid var(--line); border-radius: 10px; }
-  .rowcount { font-size: 11px; color: var(--muted); padding: 6px; }
-  details { margin-top: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--soft); }
-  summary { cursor: pointer; padding: 8px 12px; font-size: 12.5px; font-weight: 600; color: var(--blue); }
-  code.sql { display: block; padding: 10px 12px; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; overflow-x: auto; white-space: pre-wrap; }
-  .thinking { color: var(--muted); font-size: 13px; font-style: italic; }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: inherit;
+  }
+  .brand-icon {
+    width: 28px;
+    height: 28px;
+    background: var(--accent);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .brand-title {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .brand-ver {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--text-faint);
+    background: var(--bg-subtle);
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 4px;
+  }
 
-  /* modal */
-  .overlay { position: fixed; inset: 0; background: rgba(15,23,42,.4); display: none; place-items: center; z-index: 50; }
-  .overlay.open { display: grid; }
-  .modal { background: var(--card); border-radius: 16px; padding: 24px; width: min(440px, 92vw); }
-  .modal h2 { font-size: 16px; margin-bottom: 4px; }
-  .modal .hint { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
-  .field { margin-bottom: 12px; }
-  .field label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 5px; }
-  .field input { width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; font: inherit; font-size: 13px; outline: none; }
-  .field input:focus { border-color: var(--cyan); }
-  .modal .actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
-  .status-test { font-size: 12px; margin-top: 8px; }
-  .status-test.ok { color: var(--ok); } .status-test.err { color: var(--err); }
-  ::-webkit-scrollbar { width: 8px; height: 8px; } ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: var(--font-mono);
+    background: var(--bg-subtle);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--text-faint);
+  }
+  .status-dot.active { background: #10b981; }
+  .status-dot.offline { background: var(--warn-text); }
+
+  .btn {
+    border: 1px solid var(--border);
+    background: var(--bg-surface);
+    color: var(--text-main);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 36px;
+    transition: background-color 0.15s, border-color 0.15s;
+  }
+  .btn:hover:not(:disabled) {
+    background: var(--bg-subtle);
+    border-color: var(--border-strong);
+  }
+  .btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .btn.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #ffffff;
+  }
+  .btn.primary:hover:not(:disabled) {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+  }
+
+  .mobile-tabs {
+    display: none;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border);
+    padding: 4px;
+    gap: 4px;
+  }
+  .mobile-tab-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    min-height: 44px;
+    text-align: center;
+  }
+  .mobile-tab-btn.active {
+    background: var(--bg-subtle);
+    color: var(--text-main);
+  }
+
+  .preset-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .preset-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-faint);
+  }
+  .preset-chip {
+    border: 1px solid var(--border);
+    background: var(--bg-subtle);
+    color: var(--text-main);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: border-color 0.15s, background-color 0.15s;
+    min-height: 32px;
+  }
+  .preset-chip:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: var(--bg-surface);
+  }
+  .preset-chip:focus-visible {
+    outline: 2px solid var(--accent);
+  }
+
+  .workspace {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+  }
+
+  .pane-query {
+    width: 44%;
+    min-width: 360px;
+    max-width: 560px;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-surface);
+  }
+
+  .history-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .empty-history {
+    margin: auto;
+    text-align: center;
+    color: var(--text-faint);
+    max-width: 280px;
+    padding: 24px 12px;
+  }
+  .empty-history-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+  .empty-history-sub {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .chat-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .user-bubble {
+    align-self: flex-end;
+    background: var(--accent);
+    color: #ffffff;
+    padding: 8px 12px;
+    border-radius: 8px 8px 2px 8px;
+    font-size: 13px;
+    line-height: 1.4;
+    max-width: 90%;
+    word-break: break-word;
+  }
+  .ai-card {
+    align-self: flex-start;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.45;
+    width: 100%;
+    cursor: pointer;
+    transition: border-color 0.15s, background-color 0.15s;
+  }
+  .ai-card:hover {
+    border-color: var(--accent);
+  }
+  .ai-card.active {
+    border-color: var(--accent);
+    background: var(--bg-surface);
+  }
+  .ai-card:focus-visible {
+    outline: 2px solid var(--accent);
+  }
+  .ai-summary {
+    color: var(--text-main);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .ai-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--text-faint);
+  }
+  .ai-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+  }
+  .ai-status.ok { background: var(--ok-bg); color: var(--ok-text); }
+  .ai-status.no_data { background: var(--warn-bg); color: var(--warn-text); }
+  .ai-status.error { background: var(--err-bg); color: var(--err-text); }
+  .ai-status.running { background: var(--badge-bg); color: var(--badge-text); }
+
+  .input-container {
+    padding: 12px;
+    border-top: 1px solid var(--border);
+    background: var(--bg-surface);
+  }
+  .input-wrapper {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+  .query-textarea {
+    flex: 1;
+    resize: none;
+    border: 1px solid var(--border);
+    background: var(--bg-surface);
+    color: var(--text-main);
+    border-radius: 6px;
+    padding: 9px 12px;
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1.4;
+    min-height: 40px;
+    max-height: 140px;
+  }
+  .query-textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-focus);
+  }
+  .query-textarea:disabled {
+    background: var(--bg-subtle);
+    color: var(--text-faint);
+  }
+  .input-hint {
+    margin-top: 6px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-faint);
+  }
+
+  .pane-inspector {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    background: var(--bg-page);
+  }
+  .inspector-empty {
+    margin-top: 12vh;
+    text-align: center;
+    color: var(--text-muted);
+    max-width: 440px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .inspector-empty-icon {
+    width: 48px;
+    height: 48px;
+    color: var(--text-faint);
+    margin: 0 auto 12px;
+  }
+  .inspector-empty h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 6px;
+  }
+  .inspector-empty p {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text-muted);
+  }
+
+  .result-sheet {
+    max-width: 980px;
+    margin: 0 auto;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: var(--card-shadow);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .result-header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+  }
+  .result-title {
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.35;
+    margin-bottom: 8px;
+  }
+  .stats-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    font-size: 11.5px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+  }
+  .stats-item strong {
+    color: var(--text-main);
+  }
+
+  .block-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-faint);
+    margin-bottom: 6px;
+  }
+
+  .insight-box {
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-size: 14px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .chart-wrapper {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px;
+    background: var(--bg-surface);
+    min-height: 380px;
+  }
+
+  .table-box {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--bg-surface);
+  }
+  .table-scroll {
+    max-height: 300px;
+    overflow: auto;
+  }
+  table.data-grid {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+    font-family: var(--font-mono);
+  }
+  table.data-grid th, table.data-grid td {
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    padding: 6px 10px;
+    text-align: left;
+    white-space: nowrap;
+  }
+  table.data-grid th {
+    background: var(--bg-subtle);
+    font-weight: 600;
+    color: var(--text-main);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  table.data-grid tr:hover td {
+    background: var(--bg-subtle);
+  }
+  .table-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 10px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-faint);
+    background: var(--bg-subtle);
+  }
+
+  .sql-accordion {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .sql-accordion summary {
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    background: var(--bg-subtle);
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .sql-accordion summary:focus-visible {
+    outline: 2px solid var(--accent);
+  }
+  .sql-code-box {
+    background: var(--code-bg);
+    color: var(--code-text);
+    padding: 12px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.45;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  /* Modal */
+  .modal-scrim {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    display: none;
+    place-items: center;
+    z-index: 99;
+    padding: 16px;
+  }
+  .modal-scrim.open { display: grid; }
+  .modal-body {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    width: 100%;
+    max-width: 440px;
+    padding: 20px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .modal-title { font-size: 15px; font-weight: 700; }
+  .modal-desc { font-size: 12px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.4; }
+  .form-group { margin-bottom: 12px; }
+  .form-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 4px;
+  }
+  .form-input {
+    width: 100%;
+    border: 1px solid var(--border);
+    background: var(--bg-surface);
+    color: var(--text-main);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-family: inherit;
+    font-size: 13px;
+  }
+  .form-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-focus);
+  }
+  .conn-status-row {
+    font-size: 12px;
+    margin-top: 10px;
+    min-height: 20px;
+    font-family: var(--font-mono);
+  }
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  @media (max-width: 768px) {
+    .mobile-tabs { display: flex; }
+    .workspace { flex-direction: column; }
+    .pane-query {
+      width: 100%;
+      min-width: 0;
+      max-width: none;
+      border-right: none;
+      flex: 1;
+    }
+    .pane-inspector {
+      width: 100%;
+      display: none;
+      flex: 1;
+      padding: 14px;
+    }
+    .workspace[data-mobile-view="inspector"] .pane-query { display: none; }
+    .workspace[data-mobile-view="inspector"] .pane-inspector { display: block; }
+  }
 </style>
 </head>
 <body>
 
 <header>
-  <div class="logo">
-    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M3 3v18h18"/><path d="M7 14l3-4 3 3 4-6"/>
-    </svg>
+  <a href="#" class="brand" aria-label="InsightKit Workspace">
+    <div class="brand-icon">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 3v18h18"/><path d="M7 14l3-4 3 3 4-6"/>
+      </svg>
+    </div>
+    <div>
+      <span class="brand-title">InsightKit</span>
+      <span class="brand-ver">v0.1.0</span>
+    </div>
+  </a>
+
+  <div class="header-actions">
+    <div class="status-pill" id="connPill" title="Status koneksi engine">
+      <span class="status-dot" id="connDot"></span>
+      <span id="connLabel">Demo Mode</span>
+    </div>
+    <button class="btn" id="themeBtn" aria-label="Ganti mode warna">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      <span id="themeLabel">Tema</span>
+    </button>
+    <button class="btn" id="openSettingsBtn" aria-label="Buka pengaturan koneksi">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>Koneksi</span>
+    </button>
   </div>
-  <div>
-    <h1>InsightKit</h1>
-    <div class="sub">Tanya datamu pakai bahasa natural</div>
-  </div>
-  <div class="spacer"></div>
-  <button class="btn" id="settingsBtn">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-    Pengaturan
-  </button>
 </header>
 
-<div class="chips" id="chips">
-  <button class="chip">berapa total revenue dari orders yang status paid?</button>
-  <button class="chip">berapa jumlah orders?</button>
-  <button class="chip">revenue per bulan di 2025?</button>
-  <button class="chip">kota mana customer paling banyak?</button>
+<nav class="mobile-tabs" aria-label="Navigasi tampilan mobile">
+  <button class="mobile-tab-btn active" id="tabQueryBtn">Pertanyaan</button>
+  <button class="mobile-tab-btn" id="tabInspectorBtn">Hasil & Analisis</button>
+</nav>
+
+<div class="preset-bar" aria-label="Pertanyaan contoh">
+  <span class="preset-label">Contoh:</span>
+  <button class="preset-chip" type="button">berapa total revenue dari orders status paid?</button>
+  <button class="preset-chip" type="button">tren revenue bulanan di 2025</button>
+  <button class="preset-chip" type="button">jumlah order per status</button>
+  <button class="preset-chip" type="button">daftar customer dari Jakarta dan Surabaya</button>
 </div>
 
-<div class="main">
-  <div class="chat-pane">
-    <div id="chat"></div>
-    <div id="inputbar">
-      <textarea id="q" rows="1" placeholder="Tanya datamu… (Enter kirim, Shift+Enter baris baru)" disabled></textarea>
-      <button class="btn primary" id="send" disabled>Kirim</button>
+<main class="workspace" id="workspace" data-mobile-view="query">
+  <!-- Pane Kiri: Percakapan & Input -->
+  <section class="pane-query" aria-label="Panel pertanyaan">
+    <div class="history-list" id="historyList">
+      <div class="empty-history" id="emptyHistory">
+        <div class="empty-history-title">Mulai Analisis Data</div>
+        <div class="empty-history-sub">Ketik pertanyaan analitik dengan bahasa natural atau pilih salah satu contoh di atas.</div>
+      </div>
     </div>
-  </div>
 
-  <div class="result-pane">
-    <div id="placeholder">
-      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 3v18h18"/><path d="M7 14l3-4 3 3 4-6"/></svg>
-      <div>Kirim pertanyaan — insight, chart, dan hasil query tampil di sini</div>
+    <div class="input-container">
+      <div class="input-wrapper">
+        <textarea id="queryInput" class="query-textarea" rows="1" placeholder="Ketik pertanyaan analitik... (Enter kirim, Shift+Enter baris baru)"></textarea>
+        <button class="btn primary" id="sendBtn" type="button">Kirim</button>
+      </div>
+      <div class="input-hint">
+        <span>Tekan Enter untuk memproses</span>
+        <button class="btn" id="clearHistoryBtn" style="padding: 2px 6px; min-height: auto; font-size: 11px;">Bersihkan</button>
+      </div>
     </div>
-    <div id="result" style="display:none"></div>
-  </div>
-</div>
+  </section>
 
-<div class="overlay" id="overlay">
-  <div class="modal">
-    <h2>Pengaturan Koneksi</h2>
-    <div class="hint">URL API & API key disimpan di browser (localStorage).</div>
-    <div class="field"><label>API URL</label><input id="apiUrl" placeholder="https://insightkit.denisetiya.site"></div>
-    <div class="field"><label>API Key</label><input id="apiKey" type="password" placeholder="ik_..."></div>
-    <div class="status-test" id="testStatus"></div>
-    <div class="actions">
-      <button class="btn" id="testBtn">Tes Koneksi</button>
-      <button class="btn primary" id="saveBtn">Simpan</button>
+  <!-- Pane Kanan: Hasil & Detail -->
+  <section class="pane-inspector" id="paneInspector" aria-label="Panel hasil query">
+    <div class="inspector-empty" id="inspectorPlaceholder">
+      <svg class="inspector-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+      </svg>
+      <h2>Lembar Hasil Belum Dipilih</h2>
+      <p>Kirim pertanyaan baru atau klik kartu riwayat di sebelah kiri untuk melihat ringkasan insight, visualisasi chart, dan data tabular.</p>
+    </div>
+
+    <div id="inspectorContent" style="display: none;"></div>
+  </section>
+</main>
+
+<!-- Modal Pengaturan Koneksi -->
+<div class="modal-scrim" id="settingsScrim" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-body">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modalTitle">Pengaturan Koneksi Engine</h2>
+      <button class="btn" id="closeSettingsBtn" aria-label="Tutup modal" style="padding: 4px 8px; min-height: auto;">Tutup</button>
+    </div>
+    <p class="modal-desc">Konfigurasi alamat endpoint InsightKit API dan kredensial API key. Data disimpan lokal di peramban.</p>
+
+    <div class="form-group">
+      <label for="apiUrlInput">API Base URL</label>
+      <input type="text" id="apiUrlInput" class="form-input" placeholder="http://localhost:8000">
+    </div>
+
+    <div class="form-group">
+      <label for="apiKeyInput">API Key (X-API-Key)</label>
+      <input type="password" id="apiKeyInput" class="form-input" placeholder="ik_...">
+    </div>
+
+    <div class="form-group">
+      <label for="demoToggle">Mode Operasi</label>
+      <select id="modeSelect" class="form-input">
+        <option value="demo">Data Demo Interaktif (Lokal tanpa server)</option>
+        <option value="remote">Server InsightKit API (Live)</option>
+      </select>
+    </div>
+
+    <div class="conn-status-row" id="connStatusMsg"></div>
+
+    <div class="modal-footer">
+      <button class="btn" id="testConnBtn" type="button">Uji Koneksi</button>
+      <button class="btn primary" id="saveSettingsBtn" type="button">Simpan</button>
     </div>
   </div>
 </div>
 
 <script>
 const $ = (id) => document.getElementById(id);
-const cfg = { url: localStorage.getItem("ik_url") || "https://insightkit.denisetiya.site", key: localStorage.getItem("ik_key") || "" };
-let busy = false;
-const results = [];   // hasil tiap pertanyaan
-let activeIdx = -1;   // index hasil yang lagi tampil di panel kanan
 
-function setCfg(){ cfg.url = $("apiUrl").value.trim().replace(/\/+$/, ""); cfg.key = $("apiKey").value.trim(); localStorage.setItem("ik_url", cfg.url); localStorage.setItem("ik_key", cfg.key); }
-function esc(s){ const d = document.createElement("div"); d.textContent = s == null ? "" : String(s); return d.innerHTML; }
-function now(){ return new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" }); }
+// State management
+const state = {
+  url: localStorage.getItem("ik_url") || "http://localhost:8000",
+  key: localStorage.getItem("ik_key") || "",
+  mode: localStorage.getItem("ik_mode") || "demo",
+  theme: localStorage.getItem("ik_theme") || "light",
+  busy: false,
+  items: [],
+  activeIdx: -1,
+  mobileView: "query",
+};
 
-function setBusy(b){
-  busy = b;
-  $("send").disabled = b;
-  $("q").disabled = b;
-  document.querySelectorAll(".chip").forEach(c => c.disabled = b);
-  $("q").placeholder = b ? "Memproses pertanyaan… mohon tunggu" : "Tanya datamu… (Enter kirim, Shift+Enter baris baru)";
+// Initial theme application
+function applyTheme(theme) {
+  state.theme = theme;
+  document.documentElement.setAttribute("data-theme", theme);
+  localStorage.setItem("ik_theme", theme);
+  $("themeLabel").textContent = theme === "dark" ? "Terang" : "Gelap";
+}
+applyTheme(state.theme);
+
+$("themeBtn").addEventListener("click", () => {
+  applyTheme(state.theme === "dark" ? "light" : "dark");
+});
+
+function updateConnIndicator() {
+  const isDemo = state.mode === "demo";
+  $("connLabel").textContent = isDemo ? "Demo Lokal" : "Server API";
+  $("connDot").className = "status-dot " + (isDemo ? "offline" : "active");
+}
+updateConnIndicator();
+
+// Modal logic
+function openSettings() {
+  $("apiUrlInput").value = state.url;
+  $("apiKeyInput").value = state.key;
+  $("modeSelect").value = state.mode;
+  $("connStatusMsg").textContent = "";
+  $("settingsScrim").classList.add("open");
+  $("apiUrlInput").focus();
 }
 
-function addUserBubble(q){
-  const d = document.createElement("div"); d.className = "msg";
-  d.innerHTML = `<div class="user-msg">${esc(q)}</div>`;
-  $("chat").appendChild(d); d.scrollIntoView({ behavior: "smooth", block: "end" });
+function closeSettings() {
+  $("settingsScrim").classList.remove("open");
+  $("queryInput").focus();
 }
 
-function addAiBubble(idx){
-  const d = document.createElement("div"); d.className = "msg";
-  d.innerHTML = `<div class="ai-msg" id="ai-${idx}"><div class="thinking">Menghubungi InsightKit…</div></div>`;
-  $("chat").appendChild(d);
-  d.querySelector(".ai-msg").onclick = () => showResult(idx);
-  d.scrollIntoView({ behavior: "smooth", block: "end" });
-  return d.querySelector(".ai-msg");
-}
-
-function updateAiBubble(idx){
-  const r = results[idx]; const b = $("ai-" + idx); if (!b) return;
-  b.innerHTML = `<div class="preview">${esc((r.insight || r.error || "Selesai").slice(0, 140))}${(r.insight||"").length > 140 ? "…" : ""}</div>` +
-    `<div class="ai-meta"><span class="badge ${r.status || "ok"}">${esc(r.status || "ok")}</span>` +
-    `<span>${r.latency_ms}ms · ${r.tokens} token</span><span class="view-link">Lihat hasil →</span></div>`;
-}
-
-async function ask(q){
-  if (busy) return;
-  setBusy(true);
-  addUserBubble(q);
-  const idx = results.length;
-  results.push({ q, status: "…", insight: "", chart: null, columns: [], rows: [], sql: "", meta: "", error: "" });
-  const bubble = addAiBubble(idx);
-
-  if (!/^https?:\/\//i.test(cfg.url)) {
-    results[idx].status = "error"; results[idx].error = "API URL belum diisi — klik Pengaturan, isi URL + API key, lalu Simpan.";
-    updateAiBubble(idx); setBusy(false); $("overlay").classList.add("open");
-    return;
+$("openSettingsBtn").addEventListener("click", openSettings);
+$("closeSettingsBtn").addEventListener("click", closeSettings);
+$("settingsScrim").addEventListener("click", (e) => {
+  if (e.target === $("settingsScrim")) closeSettings();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && $("settingsScrim").classList.contains("open")) {
+    closeSettings();
   }
+});
+
+$("saveSettingsBtn").addEventListener("click", () => {
+  state.url = $("apiUrlInput").value.trim().replace(/\/+$/, "");
+  state.key = $("apiKeyInput").value.trim();
+  state.mode = $("modeSelect").value;
+  localStorage.setItem("ik_url", state.url);
+  localStorage.setItem("ik_key", state.key);
+  localStorage.setItem("ik_mode", state.mode);
+  updateConnIndicator();
+  closeSettings();
+});
+
+$("testConnBtn").addEventListener("click", async () => {
+  const base = $("apiUrlInput").value.trim().replace(/\/+$/, "");
+  const key = $("apiKeyInput").value.trim();
+  const st = $("connStatusMsg");
+  st.textContent = "Menguji koneksi...";
+  st.style.color = "var(--text-muted)";
+
   try {
-    const res = await fetch(cfg.url + "/api/v1/ask", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-API-Key": cfg.key },
-      body: JSON.stringify({ question: q }),
+    const res = await fetch(`${base}/api/v1/health`, {
+      headers: { "X-API-Key": key }
     });
-    if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.detail || `HTTP ${res.status}`); }
-    const reader = res.body.getReader(); const dec = new TextDecoder(); let buf = "";
-    for (;;) {
-      const { done, value } = await reader.read(); if (done) break;
-      buf += dec.decode(value, { stream: true });
-      let i;
-      while ((i = buf.indexOf("\n\n")) !== -1) {
-        handle(buf.slice(0, i), idx); buf = buf.slice(i + 2);
-      }
+    if (res.ok) {
+      const data = await res.json();
+      st.style.color = "var(--ok-text)";
+      st.textContent = `Terhubung: database ${data.database ? "aktif" : "siaga"}, model ${data.model}`;
+    } else {
+      st.style.color = "var(--err-text)";
+      st.textContent = `Gagal (HTTP ${res.status}): pastikan API key dan URL valid`;
     }
-  } catch (e) {
-    results[idx].status = "error";
-    results[idx].error = "Gagal: " + e.message + (cfg.key ? "" : " — isi API key dulu di Pengaturan.");
+  } catch (err) {
+    st.style.color = "var(--err-text)";
+    st.textContent = "Tidak dapat menjangkau server API: " + err.message;
   }
-  updateAiBubble(idx);
-  setBusy(false);
-  $("q").focus();
+});
+
+// Mobile tab switcher
+$("tabQueryBtn").addEventListener("click", () => {
+  state.mobileView = "query";
+  $("workspace").setAttribute("data-mobile-view", "query");
+  $("tabQueryBtn").classList.add("active");
+  $("tabInspectorBtn").classList.remove("active");
+});
+$("tabInspectorBtn").addEventListener("click", () => {
+  state.mobileView = "inspector";
+  $("workspace").setAttribute("data-mobile-view", "inspector");
+  $("tabInspectorBtn").classList.add("active");
+  $("tabQueryBtn").classList.remove("active");
+});
+
+// Helper escapes
+function esc(str) {
+  if (str == null) return "";
+  const d = document.createElement("div");
+  d.textContent = String(str);
+  return d.innerHTML;
 }
 
-function handle(block, idx){
-  const r = results[idx];
-  const ev = block.match(/^event: (\w+)/m)?.[1];
-  const dm = block.match(/^data: (.+)/ms);
-  if (!ev || !dm) return;
-  let d; try { d = JSON.parse(dm[1]); } catch { return; }
-  if (ev === "plan") { const b = $("ai-" + idx); if (b) b.querySelector(".thinking").textContent = `Memproses dengan ${d.model} (${d.schema_tables} tabel)…`; }
-  else if (ev === "retry") { const b = $("ai-" + idx); if (b) b.querySelector(".thinking").textContent = `Model mencoba lagi… (percobaan ${d.attempt})`; }
-  else if (ev === "sql") { r.sql = d.sql; }
-  else if (ev === "result") { r.columns = d.columns; r.rows = d.rows; r.row_count = d.row_count; }
-  else if (ev === "insight") { r.insight = d.insight; }
-  else if (ev === "chart") { r.chart = d.chart; if (idx === activeIdx) renderChart(idx); }
-  else if (ev === "done") {
-    r.status = d.status + (d.cached ? " (cached)" : "");
-    r.latency_ms = d.latency_ms; r.tokens = d.tokens; r.row_count = d.row_count; r.error = d.error || "";
-    if (idx === activeIdx) showResult(idx);
+// Built-in Demo Mock Engine
+function getDemoResponse(q) {
+  const lower = q.toLowerCase();
+  if (lower.includes("status paid") || lower.includes("revenue")) {
+    return {
+      sql: "SELECT SUM(amount) AS total_revenue, COUNT(*) AS paid_orders FROM orders WHERE status = 'paid';",
+      insight: "Total pendapatan terverifikasi dari pesanan berstatus paid adalah Rp 12.450.000 dari total 4 transaksi berhasil.",
+      columns: ["total_revenue", "paid_orders"],
+      rows: [{ total_revenue: 12450000, paid_orders: 4 }],
+      latency_ms: 38,
+      tokens: 412,
+      model: "qwen2.5-coder (demo)",
+      chart: {
+        data: [{ x: ["Paid Orders"], y: [12450000], type: "bar", marker: { color: "#0284c7" } }],
+        layout: { title: "Total Revenue Paid (IDR)", xaxis: { title: "Status" }, yaxis: { title: "Rupiah" } }
+      }
+    };
+  }
+  if (lower.includes("tren") || lower.includes("bulan")) {
+    return {
+      sql: "SELECT strftime('%Y-%m', created_at) AS bulan, SUM(amount) AS revenue FROM orders GROUP BY bulan ORDER BY bulan;",
+      insight: "Pendapatan bulanan menunjukkan kenaikan stabil dari bulan Januari hingga April, dengan puncak transaksi di bulan Maret.",
+      columns: ["bulan", "revenue"],
+      rows: [
+        { bulan: "2025-01", revenue: 3200000 },
+        { bulan: "2025-02", revenue: 4100000 },
+        { bulan: "2025-03", revenue: 5600000 },
+        { bulan: "2025-04", revenue: 4800000 }
+      ],
+      latency_ms: 45,
+      tokens: 480,
+      model: "qwen2.5-coder (demo)",
+      chart: {
+        data: [{
+          x: ["2025-01", "2025-02", "2025-03", "2025-04"],
+          y: [3200000, 4100000, 5600000, 4800000],
+          type: "scatter",
+          mode: "lines+markers",
+          line: { color: "#0284c7", width: 2.5 }
+        }],
+        layout: { title: "Tren Pendapatan Bulanan 2025", xaxis: { title: "Bulan" }, yaxis: { title: "Revenue" } }
+      }
+    };
+  }
+  if (lower.includes("status")) {
+    return {
+      sql: "SELECT status, COUNT(*) AS count, SUM(amount) AS total FROM orders GROUP BY status;",
+      insight: "Terdapat 3 kategori status order: Paid (4 transaksi), Pending (2 transaksi), dan Refunded (1 transaksi).",
+      columns: ["status", "count", "total"],
+      rows: [
+        { status: "paid", count: 4, total: 12450000 },
+        { status: "pending", count: 2, total: 3100000 },
+        { status: "refunded", count: 1, total: 500000 }
+      ],
+      latency_ms: 32,
+      tokens: 390,
+      model: "qwen2.5-coder (demo)",
+      chart: {
+        data: [{ x: ["paid", "pending", "refunded"], y: [4, 2, 1], type: "bar", marker: { color: ["#15803d", "#b45309", "#b91c1c"] } }],
+        layout: { title: "Distribusi Status Pesanan", xaxis: { title: "Status" }, yaxis: { title: "Jumlah" } }
+      }
+    };
+  }
+  return {
+    sql: "SELECT id, name, city, email FROM customers WHERE city IN ('Jakarta', 'Surabaya') LIMIT 10;",
+    insight: "Ditemukan 3 pelanggan terdaftar di area Jakarta dan Surabaya dengan akun aktif.",
+    columns: ["id", "name", "city", "email"],
+    rows: [
+      { id: 101, name: "Budi Santoso", city: "Jakarta", email: "budi.s***@example.com" },
+      { id: 102, name: "Siti Rahma", city: "Surabaya", email: "siti.r***@example.com" },
+      { id: 105, name: "Ahmad Fauzi", city: "Jakarta", email: "ahmad.f***@example.com" }
+    ],
+    latency_ms: 41,
+    tokens: 350,
+    model: "qwen2.5-coder (demo)",
+    chart: null
+  };
+}
+
+// History and Card updates
+function renderHistoryItem(idx) {
+  const item = state.items[idx];
+  const card = $(`card-${idx}`);
+  if (!card) return;
+
+  const statusClass = item.status === "ok" ? "ok" : item.status === "running" ? "running" : item.status === "no_data" ? "no_data" : "error";
+  card.innerHTML = `
+    <div class="ai-summary">${esc(item.insight || item.error || "Menjalankan pipeline analisis...")}</div>
+    <div class="ai-footer">
+      <span class="ai-status ${statusClass}">${esc(item.status)}</span>
+      <span>${item.latency_ms ? item.latency_ms + "ms" : ""}</span>
+    </div>
+  `;
+}
+
+function selectItem(idx) {
+  state.activeIdx = idx;
+  document.querySelectorAll(".ai-card").forEach((el, i) => {
+    el.classList.toggle("active", i === idx);
+  });
+  renderInspector(idx);
+
+  // Switch to inspector view on mobile automatically
+  if (window.innerWidth <= 768) {
+    $("tabInspectorBtn").click();
   }
 }
 
-function showResult(idx){
-  activeIdx = idx;
-  const r = results[idx];
-  $("placeholder").style.display = "none";
-  $("result").style.display = "block";
-  let h = `<div class="result-card">`;
-  h += `<div class="result-q">${esc(r.q)}</div>`;
-  h += `<div class="meta"><span class="badge ${r.status && !/cached/.test(r.status) ? r.status.split(" ")[0] : "ok"}">${esc(r.status || "…")}</span>` +
-       (r.latency_ms ? `<span>latency <b>${r.latency_ms}ms</b></span>` : "") +
-       (r.tokens ? `<span>tokens <b>${r.tokens}</b></span>` : "") +
-       (r.row_count != null ? `<span>baris <b>${r.row_count}</b></span>` : "") + `</div>`;
-  if (r.error) h += `<div class="err">${esc(r.error)}</div>`;
-  if (r.insight) h += `<div class="insight">${esc(r.insight)}</div>`;
-  if (r.chart) { h += `<div class="section-label">Chart</div><div class="chart-box" id="chart-${idx}"></div>`; }
-  if (r.columns.length) {
-    h += `<div class="section-label">Hasil Query</div><div class="table-wrap"><table><thead><tr>` +
-         r.columns.map(c => `<th>${esc(c)}</th>`).join("") + `</tr></thead><tbody>` +
-         r.rows.map(row => `<tr>` + r.columns.map(c => `<td>${esc(row[c])}</td>`).join("") + `</tr>`).join("") +
-         `</tbody></table></div><div class="rowcount">${r.row_count ?? r.rows.length} baris</div>`;
+function renderInspector(idx) {
+  const item = state.items[idx];
+  if (!item) return;
+
+  $("inspectorPlaceholder").style.display = "none";
+  const content = $("inspectorContent");
+  content.style.display = "block";
+
+  let html = `<article class="result-sheet">`;
+  html += `
+    <header class="result-header">
+      <h1 class="result-title">${esc(item.question)}</h1>
+      <div class="stats-bar">
+        <span class="stats-item">Status: <strong>${esc(item.status)}</strong></span>
+        ${item.latency_ms ? `<span class="stats-item">Waktu: <strong>${item.latency_ms} ms</strong></span>` : ""}
+        ${item.tokens ? `<span class="stats-item">Token: <strong>${item.tokens}</strong></span>` : ""}
+        ${item.row_count != null ? `<span class="stats-item">Baris: <strong>${item.row_count}</strong></span>` : ""}
+        ${item.model ? `<span class="stats-item">Model: <strong>${esc(item.model)}</strong></span>` : ""}
+      </div>
+    </header>
+  `;
+
+  if (item.error) {
+    html += `
+      <section>
+        <div class="block-label" style="color: var(--err-text);">Pesan Kendala</div>
+        <div class="insight-box" style="border-color: var(--err-text); background: var(--err-bg); color: var(--err-text);">
+          ${esc(item.error)}
+        </div>
+      </section>
+    `;
   }
-  if (r.sql) h += `<details><summary>Lihat SQL</summary><code class="sql">${esc(r.sql)}</code></details>`;
-  h += `</div>`;
-  $("result").innerHTML = h;
-  $("result").scrollTop = 0;
-  if (r.chart) renderChart(idx);
+
+  if (item.insight) {
+    html += `
+      <section>
+        <div class="block-label">Ringkasan Analitik</div>
+        <div class="insight-box">${esc(item.insight)}</div>
+      </section>
+    `;
+  }
+
+  if (item.chart) {
+    html += `
+      <section>
+        <div class="block-label">Visualisasi Data</div>
+        <div class="chart-wrapper" id="chartTarget"></div>
+      </section>
+    `;
+  }
+
+  if (item.columns && item.columns.length > 0) {
+    html += `
+      <section>
+        <div class="block-label">Tabel Hasil Query</div>
+        <div class="table-box">
+          <div class="table-scroll">
+            <table class="data-grid">
+              <thead>
+                <tr>${item.columns.map(c => `<th>${esc(c)}</th>`).join("")}</tr>
+              </thead>
+              <tbody>
+                ${item.rows.map(row => `<tr>${item.columns.map(c => `<td>${esc(row[c])}</td>`).join("")}</tr>`).join("")}
+              </tbody>
+            </table>
+          </div>
+          <div class="table-actions">
+            <span>Menampilkan ${item.rows.length} dari ${item.row_count ?? item.rows.length} data</span>
+            <button class="btn" id="exportCsvBtn" style="padding: 2px 8px; min-height: auto; font-size: 11px;">Unduh CSV</button>
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
+  if (item.sql) {
+    html += `
+      <section>
+        <div class="block-label">Query Database</div>
+        <details class="sql-accordion" open>
+          <summary>
+            <span>Instruksi SQL Read-Only</span>
+            <button class="btn" id="copySqlBtn" type="button" style="padding: 2px 8px; min-height: auto; font-size: 11px;">Salin</button>
+          </summary>
+          <pre class="sql-code-box"><code>${esc(item.sql)}</code></pre>
+        </details>
+      </section>
+    `;
+  }
+
+  html += `</article>`;
+  content.innerHTML = html;
+
+  // Chart rendering
+  if (item.chart) {
+    renderPlotlyChart(item.chart, "chartTarget");
+  }
+
+  // Copy SQL handler
+  const copyBtn = $("copySqlBtn");
+  if (copyBtn) {
+    copyBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      navigator.clipboard.writeText(item.sql).then(() => {
+        copyBtn.textContent = "Tersalin";
+        setTimeout(() => { copyBtn.textContent = "Salin"; }, 1800);
+      });
+    });
+  }
+
+  // Export CSV handler
+  const exportBtn = $("exportCsvBtn");
+  if (exportBtn && item.columns.length > 0) {
+    exportBtn.addEventListener("click", () => {
+      const csv = [
+        item.columns.join(","),
+        ...item.rows.map(r => item.columns.map(c => JSON.stringify(r[c] ?? "")).join(","))
+      ].join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `query_result_${Date.now()}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  }
 }
 
-function renderChart(idx){
-  const el = $("chart-" + idx); const r = results[idx];
-  if (!el || !r.chart) return;
-  el.innerHTML = '<div class="thinking">Memuat chart…</div>';
-  loadPlotly()
-    .then(P => {
-      const layout = Object.assign({}, r.chart.layout || {});
-      delete layout.template;
-      Object.assign(layout, { height: 400, autosize: true, margin: { t: 30, r: 20, b: 50, l: 60 } });
-      P.newPlot(el, r.chart.data, layout, { responsive: true, displayModeBar: true, displaylogo: false });
-    })
-    .catch(e => { el.innerHTML = `<div class="err">Chart tidak bisa dirender (Plotly CDN diblokir?): ${esc(e.message)}</div>`; });
+// Chart engine with fallback and theme adaptation
+function renderPlotlyChart(chartSpec, targetId) {
+  const container = $(targetId);
+  if (!container) return;
+  container.innerHTML = `<div style="display:grid; place-items:center; height:360px; color:var(--text-faint); font-size:13px;">Menyiapkan grafik...</div>`;
+
+  loadPlotly().then(Plotly => {
+    const isDark = state.theme === "dark";
+    const layout = Object.assign({}, chartSpec.layout || {});
+    delete layout.template;
+
+    layout.paper_bgcolor = "transparent";
+    layout.plot_bgcolor = "transparent";
+    layout.font = {
+      family: 'ui-sans-serif, system-ui, sans-serif',
+      color: isDark ? "#94a3b8" : "#475569",
+      size: 12
+    };
+    layout.margin = { t: 40, r: 24, b: 50, l: 60 };
+    layout.autosize = true;
+
+    Plotly.newPlot(container, chartSpec.data, layout, {
+      responsive: true,
+      displayModeBar: false,
+    });
+  }).catch(err => {
+    container.innerHTML = `<div style="padding:20px; color:var(--warn-text); font-size:13px;">Grafik tidak dapat dimuat: CDN Plotly tidak dapat diakses (${esc(err.message)}).</div>`;
+  });
 }
 
-function loadPlotly(){
+function loadPlotly() {
   return new Promise((resolve, reject) => {
     if (window.Plotly) return resolve(window.Plotly);
-    const urls = [
+    const cdnUrls = [
       "https://cdn.plotly.com/plotly-2.35.2.min.js",
       "https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js",
-      "https://unpkg.com/plotly.js-dist-min@2.35.2/plotly.min.js",
+      "https://unpkg.com/plotly.js-dist-min@2.35.2/plotly.min.js"
     ];
-    let i = 0;
+    let idx = 0;
     const tryNext = () => {
-      if (i >= urls.length) return reject(new Error("semua CDN gagal"));
-      const s = document.createElement("script");
-      s.src = urls[i++];
-      s.onload = () => (window.Plotly ? resolve(window.Plotly) : tryNext());
-      s.onerror = tryNext;
-      document.head.appendChild(s);
+      if (idx >= cdnUrls.length) return reject(new Error("Semua CDN Plotly gagal diakses"));
+      const script = document.createElement("script");
+      script.src = cdnUrls[idx++];
+      script.onload = () => window.Plotly ? resolve(window.Plotly) : tryNext();
+      script.onerror = tryNext;
+      document.head.appendChild(script);
     };
     tryNext();
   });
 }
 
-$("send").onclick = () => { const q = $("q").value.trim(); if (!q || busy) return; $("q").value = ""; $("q").style.height = "auto"; ask(q); };
-$("q").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (!busy) $("send").click(); } });
-$("q").addEventListener("input", () => { $("q").style.height = "auto"; $("q").style.height = Math.min($("q").scrollHeight, 130) + "px"; });
-$("chips").addEventListener("click", (e) => { if (e.target.classList.contains("chip") && !busy) ask(e.target.textContent); });
+// Ask Pipeline Execution
+async function askQuestion(questionText) {
+  const q = questionText.trim();
+  if (!q || state.busy) return;
 
-$("settingsBtn").onclick = () => { $("apiUrl").value = cfg.url; $("apiKey").value = cfg.key; $("testStatus").textContent = ""; $("overlay").classList.add("open"); };
-$("overlay").onclick = (e) => { if (e.target === $("overlay")) $("overlay").classList.remove("open"); };
-$("saveBtn").onclick = () => { setCfg(); $("overlay").classList.remove("open"); $("q").focus(); };
-$("testBtn").onclick = async () => {
-  const base = $("apiUrl").value.trim().replace(/\/+$/, ""); const key = $("apiKey").value.trim();
-  const st = $("testStatus");
-  if (!/^https?:\/\//i.test(base)) { st.className = "status-test err"; st.textContent = "✗ URL harus http(s):// — contoh: https://insightkit.denisetiya.site"; return; }
+  $("emptyHistory").style.display = "none";
+  setBusy(true);
+
+  const idx = state.items.length;
+  state.items.push({
+    question: q,
+    status: "running",
+    insight: "",
+    sql: "",
+    columns: [],
+    rows: [],
+    row_count: 0,
+    latency_ms: 0,
+    tokens: 0,
+    model: "",
+    chart: null,
+    error: ""
+  });
+
+  // Add message bubble in history
+  const historyList = $("historyList");
+  const row = document.createElement("div");
+  row.className = "chat-row";
+  row.innerHTML = `
+    <div class="user-bubble">${esc(q)}</div>
+    <div class="ai-card active" id="card-${idx}" tabindex="0" role="button" aria-label="Lihat hasil">
+      <div class="ai-summary">Menghubungi pipeline InsightKit...</div>
+      <div class="ai-footer">
+        <span class="ai-status running">memproses</span>
+      </div>
+    </div>
+  `;
+  historyList.appendChild(row);
+  row.scrollIntoView({ behavior: "smooth", block: "end" });
+
+  $(`card-${idx}`).addEventListener("click", () => selectItem(idx));
+  $(`card-${idx}`).addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      selectItem(idx);
+    }
+  });
+
+  selectItem(idx);
+
+  // If in Demo Mode or invalid URL, use mock responder
+  if (state.mode === "demo" || !/^https?:\/\//i.test(state.url)) {
+    setTimeout(() => {
+      const demo = getDemoResponse(q);
+      const item = state.items[idx];
+      item.status = "ok";
+      item.sql = demo.sql;
+      item.insight = demo.insight;
+      item.columns = demo.columns;
+      item.rows = demo.rows;
+      item.row_count = demo.rows.length;
+      item.latency_ms = demo.latency_ms;
+      item.tokens = demo.tokens;
+      item.model = demo.model;
+      item.chart = demo.chart;
+
+      renderHistoryItem(idx);
+      if (state.activeIdx === idx) renderInspector(idx);
+      setBusy(false);
+    }, 600);
+    return;
+  }
+
+  // Remote API Mode
   try {
-    const r = await fetch(base + "/api/v1/health", { headers: { "X-API-Key": key } });
-    if (r.ok) { const h = await r.json(); st.className = "status-test ok"; st.textContent = `✓ Terhubung — database: ${h.database ? "OK" : "DOWN"}, model: ${h.model}`; }
-    else { st.className = "status-test err"; st.textContent = `✗ HTTP ${r.status} — ${r.status === 401 ? "API key salah" : "URL salah?"}`; }
-  } catch { st.className = "status-test err"; st.textContent = "✗ Gagal terhubung — cek URL / koneksi."; }
-};
+    const res = await fetch(`${state.url}/api/v1/ask`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-Key": state.key
+      },
+      body: JSON.stringify({ question: q }),
+    });
 
-setBusy(false); // input aktif dari awal
-$("q").focus();
+    if (!res.ok) {
+      const errPayload = await res.json().catch(() => ({}));
+      throw new Error(errPayload.detail || `HTTP ${res.status}`);
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      let boundary;
+      while ((boundary = buffer.indexOf("\n\n")) !== -1) {
+        const block = buffer.slice(0, boundary);
+        buffer = buffer.slice(boundary + 2);
+        parseSseBlock(block, idx);
+      }
+    }
+  } catch (err) {
+    const item = state.items[idx];
+    item.status = "error";
+    item.error = "Gagal memproses pertanyaan: " + err.message + (state.key ? "" : " (API key belum diisi di Pengaturan)");
+  } finally {
+    renderHistoryItem(idx);
+    if (state.activeIdx === idx) renderInspector(idx);
+    setBusy(false);
+  }
+}
+
+function parseSseBlock(block, idx) {
+  const item = state.items[idx];
+  const eventMatch = block.match(/^event: (\w+)/m);
+  const dataMatch = block.match(/^data: (.+)/ms);
+  if (!eventMatch || !dataMatch) return;
+
+  const event = eventMatch[1];
+  let data;
+  try { data = JSON.parse(dataMatch[1]); } catch { return; }
+
+  if (event === "sql") {
+    item.sql = data.sql || "";
+  } else if (event === "result") {
+    item.columns = data.columns || [];
+    item.rows = data.rows || [];
+    item.row_count = data.row_count || 0;
+  } else if (event === "insight") {
+    item.insight = data.insight || "";
+  } else if (event === "chart") {
+    item.chart = data.chart || null;
+  } else if (event === "done") {
+    item.status = data.status || "ok";
+    item.latency_ms = data.latency_ms || 0;
+    item.tokens = data.tokens || 0;
+    item.row_count = data.row_count ?? item.row_count;
+    item.error = data.error || item.error;
+  }
+
+  renderHistoryItem(idx);
+  if (state.activeIdx === idx) renderInspector(idx);
+}
+
+function setBusy(b) {
+  state.busy = b;
+  $("sendBtn").disabled = b;
+  $("queryInput").disabled = b;
+  document.querySelectorAll(".preset-chip").forEach(c => c.disabled = b);
+  $("queryInput").placeholder = b ? "Memproses query..." : "Ketik pertanyaan analitik... (Enter kirim, Shift+Enter baris baru)";
+}
+
+// Input and Event Bindings
+$("sendBtn").addEventListener("click", () => {
+  const val = $("queryInput").value;
+  $("queryInput").value = "";
+  $("queryInput").style.height = "auto";
+  askQuestion(val);
+});
+
+$("queryInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    $("sendBtn").click();
+  }
+});
+
+$("queryInput").addEventListener("input", () => {
+  const el = $("queryInput");
+  el.style.height = "auto";
+  el.style.height = Math.min(el.scrollHeight, 140) + "px";
+});
+
+document.querySelectorAll(".preset-chip").forEach(chip => {
+  chip.addEventListener("click", () => {
+    askQuestion(chip.textContent);
+  });
+});
+
+$("clearHistoryBtn").addEventListener("click", () => {
+  state.items = [];
+  state.activeIdx = -1;
+  $("historyList").innerHTML = `
+    <div class="empty-history" id="emptyHistory">
+      <div class="empty-history-title">Riwayat Dibersihkan</div>
+      <div class="empty-history-sub">Ketik pertanyaan analitik baru atau pilih dari contoh di atas.</div>
+    </div>
+  `;
+  $("inspectorPlaceholder").style.display = "block";
+  $("inspectorContent").style.display = "none";
+});
+
+// Initialization
+setBusy(false);
+$("queryInput").focus();
 </script>
 </body>
 </html>
